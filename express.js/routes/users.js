@@ -140,11 +140,8 @@ function signin(req, res){
 function signup(req, res){
     console.log("Signup new user");
     var user = new userModel({
-        username            :   req.body.username,
+        username            :   req.body.phonenumber,
         hashedpassword      :   req.body.password,
-        firstname           :   req.body.firstName,
-        lastname            :   req.body.lastName,
-        gender              :   req.body.gender,
         email               :   req.body.email,
         salt                :   "1",
         isaproved           :   false,
@@ -161,6 +158,30 @@ function signup(req, res){
     });
 }
 
+function updateProfie(req, res){
+    console.log("update profile");
+    var conditions = { username: req.user.username }
+    ,   options = { multi: true };
+    var update = Object.create(null);
+    for(var field in req.body){
+        if (field.toString() != 'username' && field.toString() != 'password') {
+            console.log(field + ":" + req.body[field]);
+            update[field.toString()] = req.body[field];
+        }
+    }
+    console.log(update);
+    userModel.update(conditions, update, options, function (err, numAffected) {
+        if (err) {
+            console.log(err);
+            res.send(err, 401);
+        }
+        else {
+            console.log("Number of updated is : " + numAffected);
+            res.send('Profile updated successfully', 201);
+        }
+    });
+}
+
 function getUserList(req, res){
     
     //save activities
@@ -169,8 +190,11 @@ function getUserList(req, res){
         if (err)
             res.send(err, 401);
         else {
-           
-            res.json(users);
+            var results = [];
+            for (var i = 0; i < users.length; i++) {
+                results.push(users[i].getBrief());
+            }
+            res.json(results);
         }
     });
 }
@@ -194,6 +218,7 @@ router.route('/signin').post(signin);
 router.route('/signup').post(signup);
 router.route('/userList').get(requireAuthentication, getUserList);
 router.route('/getUserByMail/:email').get(requireAuthentication, getUser);
+router.route('/updateProfile').post(requireAuthentication, updateProfie);
 
 
 module.exports = router;

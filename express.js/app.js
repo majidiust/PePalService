@@ -5,8 +5,7 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var users = require('./routes/users');
-var vendors = require('./routes/vendor');
-var connectionString = 'mongodb://192.168.15.8:27017/dbVendorBank';
+var connectionString = 'mongodb://192.168.88.128:27017/dbPePalService';
 var mongoose   = require('mongoose');
 mongoose.connect(connectionString); // connect to our database
 
@@ -31,7 +30,6 @@ app.use(function (req, res, next) {
 });
 
 app.use('/api', users);
-app.use('/vendor', vendors);
 
 /// catch 404 and forward to error handler
 app.use(function(req, res, next) {

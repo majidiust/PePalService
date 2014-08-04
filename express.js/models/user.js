@@ -1,5 +1,6 @@
 var mongoose = require('mongoose');
 var bcrypt = require("bcrypt-nodejs");
+var datejs = require("safe_datejs");
 var Schema = mongoose.Schema;
 
 var UserRole = new Schema({
@@ -7,10 +8,28 @@ var UserRole = new Schema({
     roledesc            :   String
 });
 
+var City    =   new Schema({
+    name:   {type:String, required: true}
+});
+
+var Contact = new Schema({
+    name    :   {type:  String, required:   true},
+    value   :   {type:  String, required:   true},
+    desc    :   {type:  String}
+});
+
 var UserActivity = new Schema({
     activityname        : { type: String, required:true},
     activitydate        : Date,
     activitydesc        : String
+});
+
+var Image = new Schema({
+    imageName : {type: String, required: true},
+    imagePath : {type: String, required: true},
+    createDate  :   {type: Date, default: (new Date()).AsDateJs()},
+    state       : {type: Boolean, default:true},
+    imageDesc   : {type: String}
 });
 
 var User = new Schema({
@@ -31,7 +50,14 @@ var User = new Schema({
     gender              :   Boolean,
     email               :   {type : String,  unique : true, required : true},
     isaproved           :   Boolean,
-    islockedout         :   Boolean
+    islockedout         :   Boolean,
+    userImages          :   [Image],
+    profilePicture      :   { type :    Schema.ObjectId},
+    friendList          :   [{type  :   Schema.ObjectId, ref : 'user'}],
+    contacts            :   [Contact],
+    eduction            :   {type:  String},
+    city                :   {type  :   Schema.ObjectId, ref : 'city'},
+    company             :   {type  :    String}
 });
 
 
@@ -84,6 +110,6 @@ User.virtual('userId')
         return this.id;
     });
 
-var UserModel = mongoose.model('users',User);
+var UserModel = mongoose.model('user',User);
 
 module.exports.UserModel = UserModel;
