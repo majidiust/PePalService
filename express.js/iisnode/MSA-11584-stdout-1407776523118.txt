@@ -1,0 +1,12 @@
+[33m
+##############################################################
+#
+#   !!! MONGOOSE WARNING !!!
+#
+#   This is an UNSTABLE release of Mongoose.
+#   Unstable releases are available for preview/testing only.
+#   DO NOT run this in production.
+#
+##############################################################
+[0m
+Mon Aug 11 2014 21:32:08 GMT+0430 (Iran Daylight Time) Server is listening on port 1337

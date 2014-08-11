@@ -3,8 +3,8 @@
  */
 var mongoose = require('mongoose');
 var bcrypt = require('bcrypt-nodejs');
-
-
+var EntityModel = require('./chat').EntityModel;
+var RoomModel = require('./chat').RoomModel;
 //Define our user schema
 var UserSchema   = new mongoose.Schema({
   userName: {type: String ,  unique: true},
@@ -12,13 +12,15 @@ var UserSchema   = new mongoose.Schema({
   salt: String,
   verified: Boolean,
   accountState : Boolean,
-  registerDate : Date,
+  registerDate : {type: Date, default: (new Date()).AsDateJs()},
   firstName : String,
   lastName : String,
   birthDate : String,
   gender : Boolean,
   email :  {type: String ,  unique: true},
-  wallPapaerPhoto : String
+  wallPapaerPhoto : String,
+  rooms : [{type: mongoose.Schema.ObjectId, ref:'Room'}],
+  NonDeliveredEvent : [{type: mongoose.Schema.ObjectId, ref:'Entity'}]
 });
 
 
@@ -42,19 +44,6 @@ UserSchema.pre('save', function (callback) {
 });
 
 UserSchema.methods.verifyPassword = function (password, cb) {
-  //  console.log("Salt is : " + this.salt);
-  // var pwd = this.password;
-  //  console.log("old Password is : " + pwd);
-  //  console.log("New password is : " + password);
-  //  bcrypt.hash(password, this.salt, null, function (err, hash) {
-  //      console.log("verify password : " + hash + " : " + pwd);
-  //      if (err) return cb(err);
-  //      if (hash == pwd)
-  //          cb(null, true);
-  //      else
-  //          cb(null, false);
-  //  });
-  //
       bcrypt.compare(password, this.password, function (err, isMatch) {
           console.log("verify password : " + password + " : " + isMatch);
           if (err) return cb(err);
