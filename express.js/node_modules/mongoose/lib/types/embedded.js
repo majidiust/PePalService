@@ -3,7 +3,8 @@
  */
 
 var Document = require('../document')
-  , inspect = require('util').inspect;
+  , inspect = require('util').inspect
+  , Promise = require('../promise')
 
 /**
  * EmbeddedDocument constructor.
@@ -73,15 +74,15 @@ EmbeddedDocument.prototype.markModified = function (path) {
  * _This is a no-op. Does not actually save the doc to the db._
  *
  * @param {Function} [fn]
- * @return {EmbeddedDocument} this
+ * @return {Promise} resolved Promise
  * @api private
  */
 
-EmbeddedDocument.prototype.save = function(fn) {
-  if (fn)
-    fn(null);
-  return this;
-};
+EmbeddedDocument.prototype.save = function (fn) {
+  var promise = new Promise(fn);
+  promise.fulfill();
+  return promise;
+}
 
 /**
  * Removes the subdocument from its parent array.
@@ -102,12 +103,35 @@ EmbeddedDocument.prototype.remove = function (fn) {
     }
     this.__parentArray.pull({ _id: _id });
     this.willRemove = true;
+    registerRemoveListener(this);
   }
 
   if (fn)
     fn(null);
 
   return this;
+};
+
+/*!
+ * Registers remove event listeners for triggering
+ * on subdocuments.
+ *
+ * @param {EmbeddedDocument} sub
+ * @api private
+ */
+
+function registerRemoveListener (sub) {
+  var owner = sub.ownerDocument();
+
+  owner.on('save', emitRemove);
+  owner.on('remove', emitRemove);
+
+  function emitRemove () {
+    owner.removeListener('save', emitRemove);
+    owner.removeListener('remove', emitRemove);
+    sub.emit('remove', sub);
+    owner = sub = emitRemove = null;
+  };
 };
 
 /**

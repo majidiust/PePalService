@@ -1,14 +1,21 @@
 var express = require('express');
 var path = require('path');
+var passport = require('passport');
 var favicon = require('static-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
-var users = require('./routes/users');
-var connectionString = 'mongodb://192.168.88.128:27017/dbPePalService';
-var mongoose   = require('mongoose');
-mongoose.connect(connectionString); // connect to our database
+var webSocketServer = require('./websocket/chat-server.js');
+// Database
+//var mongo = require('mongoskin');
+//var db = mongo.db("mongodb://192.168.88.128:27017/sample3", {native_parser:true});
 
+var mongoose = require('mongoose');
+mongoose.connect('mongodb://192.168.88.128:27017/PePalServiceExpress');
+
+var users = require('./routes/users');
+
+webSocketServer.initWebSocket();
 
 var app = express();
 
@@ -21,11 +28,19 @@ app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded());
 app.use(cookieParser());
-app.use(require('stylus').middleware(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'public')));
+// Use the passport package in our application
+app.use(passport.initialize());
 
+
+/**
+ * Set the secret for encoding/decoding JWT tokens
+ */
+app.set('jwtTokenSecret', '729183456258456')
+
+// Make our db accessible to our router
 app.use(function (req, res, next) {
-    console.log("middle logger layer");
+    console.log("Middle layer");
     next();
 });
 

@@ -1,115 +1,65 @@
+/**
+ * New node file
+ */
 var mongoose = require('mongoose');
-var bcrypt = require("bcrypt-nodejs");
-var datejs = require("safe_datejs");
-var Schema = mongoose.Schema;
+var bcrypt = require('bcrypt-nodejs');
 
-var UserRole = new Schema({
-    rolename            :   {type : String},
-    roledesc            :   String
-});
 
-var City    =   new Schema({
-    name:   {type:String, required: true}
-});
-
-var Contact = new Schema({
-    name    :   {type:  String, required:   true},
-    value   :   {type:  String, required:   true},
-    desc    :   {type:  String}
-});
-
-var UserActivity = new Schema({
-    activityname        : { type: String, required:true},
-    activitydate        : Date,
-    activitydesc        : String
-});
-
-var Image = new Schema({
-    imageName : {type: String, required: true},
-    imagePath : {type: String, required: true},
-    createDate  :   {type: Date, default: (new Date()).AsDateJs()},
-    state       : {type: Boolean, default:true},
-    imageDesc   : {type: String}
-});
-
-var User = new Schema({
-    username            :   {type : String,  unique: true, required : true},
-    hashedpassword      : {
-                                type: String,
-                                required: true
-                          },
-    salt                : {
-                                type: String,
-                                required: true
-                          },
-    registerdate        :   {type: String, default:Date.now},
-    roles               :   [UserRole],
-    activities          :   [UserActivity],
-    firstname           :   String,
-    lastname            :   String,
-    gender              :   Boolean,
-    email               :   {type : String,  unique : true, required : true},
-    isaproved           :   Boolean,
-    islockedout         :   Boolean,
-    userImages          :   [Image],
-    profilePicture      :   { type :    Schema.ObjectId},
-    friendList          :   [{type  :   Schema.ObjectId, ref : 'user'}],
-    contacts            :   [Contact],
-    eduction            :   {type:  String},
-    city                :   {type  :   Schema.ObjectId, ref : 'city'},
-    company             :   {type  :    String}
+//Define our user schema
+var UserSchema   = new mongoose.Schema({
+  userName: {type: String ,  unique: true},
+  password: String,
+  salt: String,
+  verified: Boolean,
+  accountState : Boolean,
+  registerDate : Date,
+  firstName : String,
+  lastName : String,
+  birthDate : String,
+  gender : Boolean,
+  email :  {type: String ,  unique: true},
+  wallPapaerPhoto : String
 });
 
 
-User.pre('save', function (callback) {
-    console.log("pre saved user function");
+UserSchema.pre('save', function (callback) {
+    console.log('pre saved of user');
     var user = this;
-    if (!user.isModified('hashedpassword')) return callback();
-    else {
-        bcrypt.genSalt(5, function (err, salt) {
-            if (err)
-                return callback(err);
-            else {
-                bcrypt.hash(user.hashedpassword, salt, null, function (err, hash) {
-                    if (err)
-                        return callback(err);
-                    else{
-                        user.hashedpassword = hash;
-                        user.salt = salt;
-                        callback();        
-                    }
-                });
-            }
+    // Break out if the password hasn't changed
+    if (!user.isModified('password')) return callback();
+
+    // Password changed so we need to hash it
+    bcrypt.genSalt(5, function (err, salt) {
+        if (err) return callback(err);
+
+        bcrypt.hash(user.password, salt, null, function (err, hash) {
+            if (err) return callback(err);
+            user.password = hash;
+            user.salt = salt;
+            callback();
         });
-    }
+    });
 });
 
-User.methods.verifyPassword = function (password, cb) {
-    bcrypt.compare(password, this.hashedpassword, function (err, isMatch) {
-        if (err)
-            return cb(err);
-        else {
-            cb(null, isMatch);
-        }
-    });
-}
+UserSchema.methods.verifyPassword = function (password, cb) {
+  //  console.log("Salt is : " + this.salt);
+  // var pwd = this.password;
+  //  console.log("old Password is : " + pwd);
+  //  console.log("New password is : " + password);
+  //  bcrypt.hash(password, this.salt, null, function (err, hash) {
+  //      console.log("verify password : " + hash + " : " + pwd);
+  //      if (err) return cb(err);
+  //      if (hash == pwd)
+  //          cb(null, true);
+  //      else
+  //          cb(null, false);
+  //  });
+  //
+      bcrypt.compare(password, this.password, function (err, isMatch) {
+          console.log("verify password : " + password + " : " + isMatch);
+          if (err) return cb(err);
+          cb(null, isMatch);
+      });
+};
 
-User.methods.getBrief = function(){
-    var result =  { 
-        username : this.username,
-        email : this.email,
-        firstName : this.firstname,
-        lastName : this.lastname,
-        registerDate : this.registerdate
-    };
-    return result;
-}
-
-User.virtual('userId')
-    .get(function () {
-        return this.id;
-    });
-
-var UserModel = mongoose.model('user',User);
-
-module.exports.UserModel = UserModel;
+module.exports = mongoose.model('User', UserSchema);

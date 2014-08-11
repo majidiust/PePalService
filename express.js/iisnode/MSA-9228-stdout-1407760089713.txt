@@ -1,0 +1,11 @@
+[33m
+##############################################################
+#
+#   !!! MONGOOSE WARNING !!!
+#
+#   This is an UNSTABLE release of Mongoose.
+#   Unstable releases are available for preview/testing only.
+#   DO NOT run this in production.
+#
+##############################################################
+[0m

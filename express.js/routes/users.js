@@ -1,226 +1,221 @@
 var express = require('express');
-var userModel = require("../models/user").UserModel;
-var tokenModel = require("../models/token").TokenModel;
-var jwt = require("jwt-simple");
-var moment = require("moment");
-var datejs = require("safe_datejs");
-
 var router = express.Router();
+var User = require('../models/user');
+var TokenModel = require('../models/token');
+var authController = require('../controllers/auth');
+var jwt = require('jwt-simple');
+var moment = require('moment')
+var datejs = require('safe_datejs');
 
-
-var requireAuthentication = function (req, res, next) {
-    if (req.headers.token != undefined) {
+var requireAuth = function(req, res, next) {
+    if(req.headers.token != undefined)
+    {
         var decoded = jwt.decode(req.headers.token, "729183456258456");
-        if (decoded.exp <= Date.now) {
-            res.send("Access token has expired", 400);
+        console.log("Token expired in : " + decoded.exp);
+        if (decoded.exp <= Date.now()) {
+	        res.send('Access token has expired', 400)				
         }
-        userModel.findOne({ '_id': decoded.iss }, function (err, user) {
-            if (!err) {
-                tokenModel.find({ token: req.headers.token, state: true, userId: user.id }, function (err, tokens) {
-                    if (tokens.length > 0) {
-                        req.user = user;
-                        return next();
-                    }
-                    else {
-                        res.send("Not authorized", 401);
-                    }
-                })
+	    User.findOne({ '_id': decoded.iss }, function(err, user){
+		    if (!err) {
+                TokenModel.find({token : req.headers.token, state: true, userId: user.id}, function(err, tokens){
+                    if(tokens.length > 0)
+                        {
+                            console.log("find user token");
+                             req.user = user;									
+			                 return next();
+                     }
+                     else{
+                           res.end('Not authorized', 401)
+                     }
+                });					
+			   
+		    }
+            else{
+                res.end('Not authorized', 401)
             }
-            else {
-                res.send("Not authorized", 401);
-            }
-        });
+	    });
     }
-    else {
-        res.send("Not authorized", 401);
+    else{
+           res.end('Not authorized', 401)
     }
 }
 
-function disableOtherAccounts(userId){
+router.route('/userlist').get(requireAuth, getUserList);
+router.route('/logout').post(requireAuth, logoutUser);
+
+
+
+function DisableOtherAccounts(userId)
+{
     var today = new Date();
-    var conditions = { userId: userId }
-    , update = { stete: true, deleted: today.AsDateJs() }
+    var conditions = { userId : userId }
+    , update = { state : false, deleted : today.AsDateJs()}
     , options = { multi: true };
-    tokenModel.update(conditions, update, options, function (err, numAffected) {
-        if (err)
-            console.log(err);
-        else {
-            console.log("Number of updated is : " + numAffected);
-        }
+    
+    TokenModel.update(conditions, update, options, function (err, numAffected) {
+        console.log(err);
+        console.log("Number of updates record is : " + numAffected);
     });
 }
 
-function updateUserActivity(activity, user)
-{
-    user.activities.push({ activityname: activity, activitydate : (new Date()).AsDateJs() });
-    user.save(null);
-}
+function getUserList(req, res) {
+    console.log("getUserList");
+       User.find(function(err, users) {
+        if (err)
+          res.send(err);
+        res.json(users);
+      });
+  }
 
-function signout(req, res){
-    tokenModel.findOne({ token: req.headers.token, userId: req.user.userId }, function (err, token) {
-        if (err) {
-            return next(err);
-        }
+/*
+*   Logout from server
+*/
+function logoutUser(req, res){
+    console.log("try to logout"); 
+    console.log("username : " + req.user.userName);
+    console.log("token is : " + req.headers.token);
+    console.log("user id : " + req.user.id);
+    TokenModel.findOne({token: req.headers.token, userId : req.user.id}, function(err, token){
+      if (err) {console.log(err); return next(err); }
+      token.state = false;
+      //token.deleted = Date.now;
+      token.save(function(err) {
+        if (err) {console.log(err); return next(err); }
         else {
-            token.state = false;
-            token.save(function (err) {
-                if (err)
-                    return next(err);
-                else {
-                    res.json({ state: true });
-                }
-                console.log("token updated successfully");
-            });
+            res.json({state : true});
         }
-    });    
-}
+        console.log("token updated successfully");
+      });
+    });
 
-function signin(req, res){
-    var userName = req.body.username;
-    var password = req.body.password;
-    userModel.findOne({ username: userName }, function (err, user) {
-        if (err) {
-            console.log(err);
-            res.send("Authentication error: error in fetching data", 401);
-            return;
-        }
-        else {
-            if (!user) {
-                console.log("user " + userName + " not found");
-                res.send("Authentic ation error : user not found", 401);
+};
+
+router.get('/users/:email', function (req, res) {
+    if (req.params.email) {
+        User.find({ email: req.params.email }, function (err, docs) {
+            res.json(docs);
+        });
+    }
+});
+
+
+
+
+/*
+*   Login to server
+*/
+router.post('/login', function (req, res){
+    console.log("try to login");
+    console.log("user name : " + req.body.userName);
+    console.log("password : " + req.body.password);
+    var username = req.body.userName;
+	var password = req.body.password;
+	User.findOne(
+        { 
+            userName: username 
+        }, 
+        function (err, user) {
+            if (err) 
+            { 
+                console.log(err); 
+                res.send('Authentication error : error in fetchig data', 401);
                 return;
             }
-            else {
-                user.verifyPassword(password, function (err, isMatch) {
-                    if (err) {
-                        console.log(err);
-                        res.send("Authentication error: error in verify password", 401);
+
+            // No user found with that username
+            if (!user) 
+            { 
+                console.log('user not found'); 
+                res.send('Authentication error : user not found', 401);
+                return;
+            }
+            // Make sure the password is correct
+            user.verifyPassword(password, function (err, isMatch) {
+                    if (err) 
+                    {
+                        console.log(err); 
+                        res.send('Authentication error', 401);
+                        return; 
+                    }
+                    // Password did not match
+                    if (!isMatch) 
+                    { 
+                        res.send('Authentication error, password is incorrect', 401);
                         return;
                     }
-                    else {
-                        if (!isMatch) {
-                            console.log("Authentication error : password is wrong");
-                            res.send("Authentication error : password is wrong", 401);
+                    // Success
+                    console.log("Disable other accounts");
+                    DisableOtherAccounts(user.id);
+                    console.log("Token is : " + "729183456258456");
+                    var expires = moment().add('days', 7).valueOf();
+                    console.log("Expires is : " + expires);
+                    console.log("User id : " + user.id);				
+				    var token = jwt.encode(
+							    {
+								    iss: user.id,
+								    exp: expires
+							    }, 
+							    "729183456258456"
+						    );	
+                    var newToken = new TokenModel({
+                        userId : user.id,
+                        token : token,
+                        exp : expires
+                    });		
+                    newToken.save(function(err) {
+                        if(err)
+                        {
+                            console.log("Error in saving token : " + err);
                         }
-                        else {
-                            console.log("disabling other tokens for user  : " + userName);
-                            updateUserActivity("signin", user);
-                            disableOtherAccounts(user.id);
-                            console.log("alocationg new token for user  : " + userName);
-                            var expires = moment().add('days', 7).valueOf();
-                            var token = jwt.encode({
-                                iss: user.id,
-                                exp: expires
-                            },
-                            "729183456258456"
-                            );
-                            var newTokenIns = new tokenModel({
-                                userId: user.id,
-                                token: token,
-                                exp: expires
-                            });
-                            newTokenIns.save(function (err) {
-                                if (err) {
-                                    console.log("Error in saveing token in database : " + err);
-                                }
-                                else {
-                                    console.log("Token saved successfully");
-                                }
-                                res.json({ token: token });
-                                return;
-                            });
+                        else{
+                            console.log("Token saved successfully");
                         }
-                    }
-                });
-            }
-        }
+                        }
+                    );			
+		            res.json({token : token});
+                    return;
+            });
     });
-}
+});
 
-function signup(req, res){
-    console.log("Signup new user");
-    var user = new userModel({
-        username            :   req.body.phonenumber,
-        hashedpassword      :   req.body.password,
-        email               :   req.body.email,
-        salt                :   "1",
-        isaproved           :   false,
-        islockedout         :   false
-    });
-    console.log(user);
-    user.roles.push({ rolename: 'user' });
-    user.activities.push({ activityname: 'signup', activitydate : (new Date()).AsDateJs() });
-    user.save(function (err) {
-        if (err)
-            res.send(err, 401);
-        else
-            res.json({message: 'user added to database successfully'});
-    });
-}
-
-function updateProfie(req, res){
-    console.log("update profile");
-    var conditions = { username: req.user.username }
-    ,   options = { multi: true };
-    var update = Object.create(null);
-    for(var field in req.body){
-        if (field.toString() != 'username' && field.toString() != 'password') {
-            console.log(field + ":" + req.body[field]);
-            update[field.toString()] = req.body[field];
-        }
-    }
-    console.log(update);
-    userModel.update(conditions, update, options, function (err, numAffected) {
-        if (err) {
-            console.log(err);
-            res.send(err, 401);
-        }
-        else {
-            console.log("Number of updated is : " + numAffected);
-            res.send('Profile updated successfully', 201);
-        }
-    });
-}
-
-function getUserList(req, res){
-    
-    //save activities
-    updateUserActivity("getUserList", req.user);
-    userModel.find(function (err, users) {
-        if (err)
-            res.send(err, 401);
-        else {
-            var results = [];
-            for (var i = 0; i < users.length; i++) {
-                results.push(users[i].getBrief());
-            }
-            res.json(results);
-        }
-    });
-}
-
-function getUser(req, res){
-    updateUserActivity("getUser", req.user);
-    console.log("Get user by email : " + req.params.email);
-    if(req.params.email){
-        userModel.findOne({ email: req.params.email }, function (err, user) {
-            res.json(user.getBrief());
-        });
-    }
-}
 /*
-*   Register user apis
-*/
+ * POST to adduser.
+ */
+router.post('/adduser', function(req, res) {
+    console.log(req.body);
+     console.log(req.params);
+   var user = new User({
+    userName: req.body.userName,
+    password: req.body.password,
+    salt: req.body.salt,
+    vrified: req.body.vrified,
+    accountState : req.body.accountState,
+    registerDate : new Date(),
+    firstName : req.body.firstName,
+    lastName : req.body.lastName,
+    birthDate : req.body.birthDate,
+    gender : req.body.gender,
+    email : req.body.email,
+    wallPapaerPhoto : "wallPapaerPhoto"
+  });
+  console.log(user);
+  user.save(function(err) {
+    if (err)
+      res.send(err);
+    res.json({ message: 'New user added to data bases successfully!' });
+  });
+});
 
-
-router.route('/signout').post(requireAuthentication, signout);
-router.route('/signin').post(signin);
-router.route('/signup').post(signup);
-router.route('/userList').get(requireAuthentication, getUserList);
-router.route('/getUserByMail/:email').get(requireAuthentication, getUser);
-router.route('/updateProfile').post(requireAuthentication, updateProfie);
+/*
+ * DELETE to deleteuser.
+ */
+router.delete('/deleteuser/:id',requireAuth, function(req, res) {
+    var db = req.db;
+    var userToDelete = req.params.id;
+    db.collection('userlist').removeById(userToDelete, function(err, result) {
+        res.send((result === 1) ? { msg: '' } : { msg:'error: ' + err });
+    });
+});
 
 
 module.exports = router;
-module.exports.requireAuthentication = requireAuthentication;
-module.exports.updateUserActivity = updateUserActivity;
