@@ -15,7 +15,6 @@ mongoose.connect('mongodb://192.168.88.128:27017/PePalServiceExpress');
 
 var users = require('./routes/users');
 
-webSocketServer.initWebSocket();
 
 var app = express();
 
@@ -77,5 +76,7 @@ app.use(function(err, req, res, next) {
     });
 });
 
+
+webSocketServer.initWebSocket();
 
 module.exports = app;

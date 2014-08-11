@@ -1,9 +1,13 @@
 var webSocketsServerPort = 1337;
 // websocket and http servers
 var webSocketServer = require('websocket').server;
+var TokenModel = require('../models/token');
+var AuthResultCodes = require('../libs/error-codes').AuthResultCode;
+var User = require('../models/user');
 var http = require('http');
-var history = [];
-// list of currently connected clients (users)
+var jwt = require('jwt-simple');
+var MessageType = require('../libs/msg-types').WebsocketMessageList;
+var CommandList = require('../libs/cmd-list').WebsocketCommandList;
 var clients = [];
 var server;
 var wsServer;
@@ -27,69 +31,146 @@ var initWebSocket = function () {
 
     wsServer.on('request', function (request) {
         console.log((new Date()) + ' Connection from origin ' + request.origin + '.');
-        // accept connection - you should check 'request.origin' to make sure that
-        // client is connecting from your website
-        // (http://en.wikipedia.org/wiki/Same_origin_policy)
         var connection = request.accept(null, request.origin);
         // we need to know client index to remove them on 'close' event
-        var index = clients.push(connection) - 1;
-        var userName = false;
-        var userColor = false;
-
-        console.log((new Date()) + ' Connection accepted.');
-
-        // send back chat history
-        if (history.length > 0) {
-            connection.sendUTF(JSON.stringify({ type: 'history', data: history }));
-        }
-
+        var index = clients.length;
+        connection.authResult = AuthResultCodes.UnAuthorized;
+        clients[index] = connection;
+        connection.id = index;
+        console.log((new Date()) + ' Connection accepted. connection id is : ' + index);
         // user sent some message
         connection.on('message', function (message) {
-            if (message.type === 'utf8') { // accept only text
-                if (userName === false) { // first message sent by user is their name
-                    // remember user name
-                    userName = htmlEntities(message.utf8Data);
-                    // get random color and send it back to the user
-                    userColor = colors.shift();
-                    connection.sendUTF(JSON.stringify({ type: 'color', data: userColor }));
-                    console.log((new Date()) + ' User is known as: ' + userName
-                            + ' with ' + userColor + ' color.');
+            console.log(message);
+            try {
+                var object;
+                if (message.type == 'utf8') {
+                    object = JSON.parse(message.utf8Data);
+                }
+                else {
+                    object = JSON.parse(message.data);
+                }
+                console.log(object);
 
-                } else { // log and broadcast the message
-                    console.log((new Date()) + ' Received Message from '
-                            + userName + ': ' + message.utf8Data);
+                if (object.token != undefined) {
+                    try {
+                        console.log("token is : " + object.token);
+                        connection.token = object.token;
+                        isAuthorized(connection,
+                        function () {
+                            clients[connection.id].attempts = 0;
+                            clients[connection.id].authResult = connection.authResult;
+                            clients[connection.id].user = connection.user;
+                            connection.send(createResultTextData(CommandList.Authorized.message, CommandList.Authorized.code));
+                        },
+                        function () {
+                            console.log("not authorized");
+                            sendAuthorizationRequest(connection);
+                            if (clients[connection.id].attempts)
+                                clients[connection.id].attempts += 1;
+                            else
+                                clients[connection.id].attempts = 1;
+                            console.log((new Date()) + 'attempt : ' + clients[connection.id].attempts + 'connection close because ' + connection.authResult.code + ':' + connection.authResult.Message);
+                        })
 
-                    // we want to keep history of all sent messages
-                    var obj = {
-                        time: (new Date()).getTime(),
-                        text: htmlEntities(message.utf8Data),
-                        author: userName,
-                        color: userColor
-                    };
-                    history.push(obj);
-                    history = history.slice(-100);
-
-                    // broadcast message to all connected clients
-                    var json = JSON.stringify({ type: 'message', data: obj });
-                    for (var i = 0; i < clients.length; i++) {
-                        clients[i].sendUTF(json);
+                    }
+                    catch (ex) {
+                        console.log("token exist : " + ex);
+                        sendAuthorizationRequest(connection);
                     }
                 }
+                else {
+                    if (clients[connection.id].authResult.code == AuthResultCodes.AuthorizationIsOk.code) {
+                        connection.send(createResultTextData(CommandList.InvalidMessage.code, CommandList.InvalidMessage.message));
+                    } else {
+                        sendAuthorizationRequest(connection);
+                    }
+                }
+            }
+            catch (ex) {
+                console.log("onmessage : " + ex);
             }
         });
 
         connection.on('close', function (connection) {
-            if (userName !== false && userColor !== false) {
-                console.log((new Date()) + " Peer "
-                + connection.remoteAddress + " disconnected.");
-                // remove user from the list of connected clients
-                clients.splice(index, 1);
-                // push back user's color to be reused by another user
-                colors.push(userColor);
-            }
+            console.log("client disconnected.");
+            console.log((new Date()) + ' Peer ' + connection.remoteAddress + ' disconnected. ' +
+                    "Connection ID: " + connection.id);
+            // Make sure to remove closed connections from the global pool
+            delete clients[connection.id];
         });
     });
+}
+
+function createResultTextData(cmd, data) {
+    return JSON.stringify({ cmd: cmd, data: data });
+}
+
+function sendTextMessageToRoom(from, room) {
 
 }
+
+function sendAuthorizationRequest(connection) {
+    try {
+        if (connection && connection.connected) {
+            connection.send(createResultTextData(CommandList.TokenRequest.message, CommandList.TokenRequest.code));
+        }
+    }
+    catch (ex) {
+        console.log("sendAuthorizationRequest : " + ex);
+    }
+}
+
+function notifyRoomMembers() {
+    //TODO : notify room members for events
+}
+
+/*
+*   check that is token valid and add user and authResult to request
+*   return true if authorized and false other than
+*/
+function isAuthorized(request, successCallback, errorCallback) {
+    if (request.token != undefined) {
+        var decoded = jwt.decode(request.token, "729183456258456");
+        console.log("Token expired in : " + decoded.exp);
+        if (decoded.exp <= Date.now()) {
+            request.authResult = AuthResultCodes.TokenExpired;
+            console.log("Token has been expired!");
+            if (errorCallback != null)
+                errorCallback();
+        }
+        User.findOne({ '_id': decoded.iss }, function (err, user) {
+            if (!err) {
+                TokenModel.find({ token: request.token, state: true, userId: user.id }, function (err, tokens) {
+                    if (tokens.length > 0) {
+                        console.log("find user token");
+                        request.user = user;
+                        request.authResult = AuthResultCodes.AuthorizationIsOk;
+                        if (successCallback != null)
+                            successCallback();
+                    }
+                    else {
+                        request.authResult = AuthResultCodes.TokenIsInvalid;
+                        if (errorCallback != null)
+                            errorCallback();
+                    }
+                });
+            }
+            else {
+                request.authResult = AuthResultCodes.TokenIsInvalid;
+                if (errorCallback != null)
+                    errorCallback();
+            }
+        });
+    }
+    else {
+        request.authResult = AuthResultCodes.TokenIsUndifined;
+        return false;
+    }
+}
+
+function sendEventsToUser(user) {
+
+}
+
 
 module.exports.initWebSocket = initWebSocket;
