@@ -7,7 +7,7 @@ var EntitySchema = new mongoose.Schema({
     CreateDate : {type: Date, default: (new Date()).AsDateJs()},
     Value: {type:String, required:true},
     CreateBy :{type: mongoose.Schema.ObjectId, ref:'User'},
-    PublishType: {type: String}, // Scheduled, now
+    PublishType: {type: String, enum: ['Scheduled', 'Now']}, // Scheduled, now
     PublishDate: {type: Date, default: (new Date()).AsDateJs()},
     Deliverd:[{type: mongoose.Schema.ObjectId, ref:'User'}],
     NotDelivered:[{type: mongoose.Schema.ObjectId, ref:'User'}]
@@ -21,12 +21,12 @@ var RoomSchema = new mongoose.Schema({
     Logo :{type: String},
     Admins :[{type: mongoose.Schema.ObjectId, ref:'User'}],
     Creator : {type: mongoose.Schema.ObjectId, ref:'User'},
-    Access:{type: String}, // public,Private
+    Access:{type: String, enum :['Public','Private']}, // public,Private
     Password : {type: String},
     Invited :[{type: mongoose.Schema.ObjectId, ref:'User'}],
     Requests:[{type: mongoose.Schema.ObjectId, ref:'User'}],
     CreateDate : {type: Date, default: (new Date()).AsDateJs()},
-    StartType: {type:String},
+    StartType: {type:String,enum: ['Scheduled', 'Now']},
     StartDate: {type: Date, default: (new Date()).AsDateJs()}
 });
 

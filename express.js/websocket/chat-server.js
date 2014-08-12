@@ -1,6 +1,7 @@
 var webSocketsServerPort = 1337;
 // websocket and http servers
 var webSocketServer = require('websocket').server;
+var Sleep = require('sleep');
 var TokenModel = require('../models/token');
 var AuthResultCodes = require('../libs/error-codes').AuthResultCode;
 var User = require('../models/user');
@@ -11,6 +12,7 @@ var CommandList = require('../libs/cmd-list').WebsocketCommandList;
 var clients = [];
 var server;
 var wsServer;
+
 var initWebSocket = function () {
     server = http.createServer(function (request, response) {
         // Not important for us. We're writing WebSocket server, not HTTP server
@@ -35,8 +37,10 @@ var initWebSocket = function () {
         // we need to know client index to remove them on 'close' event
         var index = clients.length;
         connection.authResult = AuthResultCodes.UnAuthorized;
-        clients[index] = connection;
         connection.id = index;
+        clients[index] = connection;
+        addBackgroundWorker(clients[index]);
+
         console.log((new Date()) + ' Connection accepted. connection id is : ' + index);
         // user sent some message
         connection.on('message', function (message) {
@@ -61,6 +65,7 @@ var initWebSocket = function () {
                             clients[connection.id].authResult = connection.authResult;
                             clients[connection.id].user = connection.user;
                             connection.send(createResultTextData(CommandList.Authorized.message, CommandList.Authorized.code));
+                            clients[connection.id].startWorker();
                         },
                         function () {
                             console.log("not authorized");
@@ -80,6 +85,14 @@ var initWebSocket = function () {
                 }
                 else {
                     if (clients[connection.id].authResult.code == AuthResultCodes.AuthorizationIsOk.code) {
+                        if (object.code != undefined) {
+                            if (object.code == WebsocketMessageList.SendTextMessageTo.value) {
+                                sendTextMessageToRoom(clients[connection.id].user, object.param);
+                            }
+                        }
+                        else {
+
+                        }
                         connection.send(createResultTextData(CommandList.InvalidMessage.code, CommandList.InvalidMessage.message));
                     } else {
                         sendAuthorizationRequest(connection);
@@ -93,10 +106,11 @@ var initWebSocket = function () {
 
         connection.on('close', function (connection) {
             console.log("client disconnected.");
+            clients[index].stopWorker();
             console.log((new Date()) + ' Peer ' + connection.remoteAddress + ' disconnected. ' +
-                    "Connection ID: " + connection.id);
+                    "Connection ID: " + index);
             // Make sure to remove closed connections from the global pool
-            delete clients[connection.id];
+            delete clients[index];
         });
     });
 }
@@ -105,7 +119,7 @@ function createResultTextData(cmd, data) {
     return JSON.stringify({ cmd: cmd, data: data });
 }
 
-function sendTextMessageToRoom(from, room) {
+function sendTextMessageToRoom(from, roomId) {
 
 }
 
@@ -122,6 +136,19 @@ function sendAuthorizationRequest(connection) {
 
 function notifyRoomMembers() {
     //TODO : notify room members for events
+}
+
+function addBackgroundWorker(object) {
+    object.startWorker = function () {
+        object.backgrounWorker = setInterval(function () {
+            console.log("/");
+        }, 2000);
+    }
+    object.stopWorker = function () {
+        if (object.backgrounWorker) {
+            clearInterval(object.backgrounWorker);
+        }
+    }
 }
 
 /*

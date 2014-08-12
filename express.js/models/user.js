@@ -19,7 +19,8 @@ var UserSchema   = new mongoose.Schema({
   gender : Boolean,
   email :  {type: String ,  unique: true},
   wallPapaerPhoto : String,
-  rooms : [{type: mongoose.Schema.ObjectId, ref:'Room'}],
+  groups : [{type: mongoose.Schema.ObjectId, ref:'Room'}],
+  individuals : [{type: mongoose.Schema.ObjectId, ref:'Room'}],
   NonDeliveredEvent : [{type: mongoose.Schema.ObjectId, ref:'Entity'}]
 });
 

@@ -1,0 +1,2 @@
+Warning: Native modules not compiled.  XOR performance will be degraded.
+Warning: Native modules not compiled.  UTF-8 validation disabled.

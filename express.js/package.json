@@ -23,6 +23,9 @@
     "jwt-simple": "0.2.0"   ,
     "safe_datejs":"*" ,
     "socket.io":"*",
-    "websocket":"*"
+    "websocket":"*",
+    "webworker-threads":"*",
+    "sleep":"*",
+    "timer":"*"
     }
 }
