@@ -21,7 +21,7 @@ var UserSchema   = new mongoose.Schema({
   wallPapaerPhoto : String,
   groups : [{type: mongoose.Schema.ObjectId, ref:'Room'}],
   individuals : [{type: mongoose.Schema.ObjectId, ref:'Room'}],
-  NonDeliveredEvent : [{type: mongoose.Schema.ObjectId, ref:'Entity'}]
+  nonDeliveredEvents : [{type: mongoose.Schema.ObjectId, ref:'Entity'}]
 });
 
 

@@ -4,8 +4,16 @@ var AuthResultCode = {
     UserDoesNotExist: { code: -3, Message: "User doesn't exist." },
     PasswordIsInvalid: { code: -4, Message: "Password is invalid." },
     TokenIsUndifined: { code: -5, Message: "Token is undifined." },
-    AuthorizationIsOk: { code: 0, Message: "Authenticated." },
-    UnAuthorized:{code: -6, Message:"Not authorized."}
+    UnAuthorized:{code: -6, Message:"Not authorized."},
+    RoomDoesNotExist:{code: -7, Message: "RoomDoesNotExist"},
+    CreateEventError:{code: -8, Message:"CreateEventError"},
+    PushEventToRoomError:{code: -9, Message: "PushEventToRoomError"},
+    PushEventToUSerError:{code: -10, Message: "PushEventToUSerError"},
+    InvalidRequestCode:{code: -11, Message: "InvalidRequestCode"},
+    RoomIdIsEmpty:{code: -12, Message:"RoomIdIsEmpty"},
+    InvalidEventContent:{code: -13, Message:"InvalidEventContent"},
+    InvalidEventPublishType: {code: -14, Message:"InvalidEventPublishType"},
+    InvalidEventPublishDate: {code: -14, Message:"InvalidEventPublishDate"}
 };
 
 module.exports.AuthResultCode = AuthResultCode;

@@ -3,14 +3,14 @@ var UserModel = require('./user');
 var datejs = require('safe_datejs');
 
 var EntitySchema = new mongoose.Schema({
-    Type : {type: String, required: true}, // IM/audio/video/smily
+    Type : {type: String, required: true, enum: ['Text', 'Audio', 'Video', 'SMS', 'Smily']}, // IM/audio/video/smily
     CreateDate : {type: Date, default: (new Date()).AsDateJs()},
-    Value: {type:String, required:true},
-    CreateBy :{type: mongoose.Schema.ObjectId, ref:'User'},
+    Content: {type:String, required:true},
+    Creator :{type: mongoose.Schema.ObjectId, ref:'User'},
+    CreatorUserName: {type: String},
     PublishType: {type: String, enum: ['Scheduled', 'Now']}, // Scheduled, now
     PublishDate: {type: Date, default: (new Date()).AsDateJs()},
-    Deliverd:[{type: mongoose.Schema.ObjectId, ref:'User'}],
-    NotDelivered:[{type: mongoose.Schema.ObjectId, ref:'User'}]
+    Delivered:[{type: mongoose.Schema.ObjectId, ref:'User'}]
 });
 
 var RoomSchema = new mongoose.Schema({
