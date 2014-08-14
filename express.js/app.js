@@ -14,7 +14,7 @@ var mongoose = require('mongoose');
 mongoose.connect('mongodb://192.168.88.128:27017/PePalServiceExpress');
 
 var users = require('./routes/users');
-
+var chatRest = require('./routes/chat');
 
 var app = express();
 
@@ -43,6 +43,7 @@ app.use(function (req, res, next) {
 });
 
 app.use('/api', users);
+app.use('/chat', chatRest);
 
 /// catch 404 and forward to error handler
 app.use(function(req, res, next) {

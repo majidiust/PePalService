@@ -38,7 +38,7 @@ var requireAuth = function(req, res, next) {
     else{
            res.end('Not authorized', 401)
     }
-}
+};
 
 router.route('/userlist').get(requireAuth, getUserList);
 router.route('/logout').post(requireAuth, logoutUser);
@@ -219,3 +219,4 @@ router.delete('/deleteuser/:id',requireAuth, function(req, res) {
 
 
 module.exports = router;
+module.exports.requireAuthentication = requireAuth;
