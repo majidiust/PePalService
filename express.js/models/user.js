@@ -53,21 +53,4 @@ UserSchema.methods.verifyPassword = function (password, cb) {
       });
 };
 
-UserSchema.methods.hasRelationTo = function(other, exist, notExist){
-  try{
-      this.populate('individuals', function(err, me){
-          for(var ins in me.individuals){
-              for(var o in ins.Members){
-                  if(other == o)
-                      exist(ins.id);
-              }
-          }
-          notExist();
-      });
-  }
-    catch(ex){
-        console.log(ex);
-    }
-};
-
 module.exports = mongoose.model('User', UserSchema);

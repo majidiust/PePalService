@@ -184,7 +184,8 @@ function createParametrizedResultTextData(message, code, paramName, paramValue) 
 //OtherParty : id of other user
 function createIndividualRoom(client, otherParty) {
     try {
-        client.user.hasRelationTo(otherParty, function (roomId) {
+        hasUserRelationToOther(client.user, otherParty, function (roomId) {
+            console.log("Room exist : " + roomId);
             client.connection.send(createParametrizedResultTextData(SuccessCodes.RoomExist.Message, SuccessCodes.RoomExist.code, 'roomId', roomId));
         }, function () {
             //Create Room Instance
@@ -200,7 +201,23 @@ function createIndividualRoom(client, otherParty) {
             newRoom.Members.push(client.user.id);
             newRoom.Members.push(otherParty);
             newRoom.save(null);
+            client.user.individuals.push(newRoom.id);
+            client.user.save(null);
             client.connection.send(createParametrizedResultTextData(SuccessCodes.CreateRoomSuccessfully.Message, SuccessCodes.CreateRoomSuccessfully.code, 'roomId', newRoom.id));
+            User.findOne({ '_id': client.user.id }, function(err, remote){
+                if(err){
+                    console.log('Could not find remote party');
+                }
+                else if(!remote){
+                    console.log('Could not find remote party');
+                }
+                else{
+                    console.log("room added to remote party successfully");
+                    console.log(remote);
+                    remote.individuals.push(newRoom.id);
+                    remote.save(null);
+                }
+            })
         });
     }
     catch (ex) {
@@ -386,6 +403,40 @@ function createTextEventMessage(event) {
     };
     return JSON.stringify(result);
 }
+
+function hasUserRelationToOther(me, other, exist, notExist){
+    try{
+        console.log("check is two user make chat before ? ");
+        User.findOne({'_id':me.id}).populate('individuals').exec(function (err, user) {
+            console.log(user);
+            var e = false;
+            var roomid ;
+            for(var i = 0 ; i < user.individuals.length ; i++){
+                for(var j = 0 ;  j < user.individuals[i].Members.length ; j++){
+                    if(user.individuals[i].Members[j] == other) {
+                        console.log('room id is : ' + user.individuals[i].id);
+                        roomid = user.individuals[i].id;
+                        e = true;
+                        break;
+                    }
+                }
+                if(e == true)
+                break;
+            }
+            if(e == true)
+            {
+                exist(roomid);
+            }
+            else{
+                notExist();
+            }
+
+        });
+    }
+    catch(ex){
+        console.log(ex);
+    }
+};
 
 
 module.exports.initWebSocket = initWebSocket;
