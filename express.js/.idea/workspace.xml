@@ -23,11 +23,21 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file leaf-file-name="users.js" pinned="false" current="true" current-in-tab="true">
+      <file leaf-file-name="users.js" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/routes/users.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="0.52545154" vertical-offset="3318" max-vertical-offset="3927">
-              <caret line="214" column="0" selection-start-line="214" selection-start-column="0" selection-end-line="222" selection-end-column="0" />
+            <state vertical-scroll-proportion="0.0" vertical-offset="3318" max-vertical-offset="3927">
+              <caret line="218" column="59" selection-start-line="214" selection-start-column="0" selection-end-line="222" selection-end-column="0" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="chat-server.js" pinned="false" current="true" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/tcpsocket/chat-server.js">
+          <provider selected="true" editor-type-id="text-editor">
+            <state vertical-scroll-proportion="0.4981685" vertical-offset="0" max-vertical-offset="7106">
+              <caret line="16" column="0" selection-start-line="16" selection-start-column="0" selection-end-line="16" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -46,8 +56,8 @@
       <file leaf-file-name="chat-server.js" pinned="false" current="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/websocket/chat-server.js">
           <provider selected="true" editor-type-id="text-editor">
-            <state vertical-scroll-proportion="-11.56" vertical-offset="3213" max-vertical-offset="7599">
-              <caret line="206" column="49" selection-start-line="206" selection-start-column="49" selection-end-line="206" selection-end-column="49" />
+            <state vertical-scroll-proportion="-3.1" vertical-offset="6747" max-vertical-offset="7599">
+              <caret line="406" column="0" selection-start-line="406" selection-start-column="0" selection-end-line="438" selection-end-column="2" />
               <folding />
             </state>
           </provider>
@@ -78,13 +88,13 @@
         <option value="$PROJECT_DIR$/libs/error-codes.js" />
         <option value="$PROJECT_DIR$/libs/success-codes.js" />
         <option value="$PROJECT_DIR$/app.js" />
-        <option value="$PROJECT_DIR$/tcpsocket/chat-server.js" />
         <option value="$PROJECT_DIR$/models/token.js" />
         <option value="$PROJECT_DIR$/models/chat.js" />
         <option value="$PROJECT_DIR$/routes/chat.js" />
         <option value="$PROJECT_DIR$/models/user.js" />
         <option value="$PROJECT_DIR$/routes/users.js" />
         <option value="$PROJECT_DIR$/websocket/chat-server.js" />
+        <option value="$PROJECT_DIR$/tcpsocket/chat-server.js" />
       </list>
     </option>
   </component>
@@ -403,16 +413,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/tcpsocket/chat-server.js">
-      <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.55829227" vertical-offset="0" max-vertical-offset="609">
-          <caret line="22" column="1" selection-start-line="22" selection-start-column="1" selection-end-line="22" selection-end-column="1" />
-          <folding>
-            <element signature="e#0#41#0" expanded="false" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/app.js">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="2.2889984" vertical-offset="0" max-vertical-offset="1530">
@@ -437,18 +437,26 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/websocket/chat-server.js">
+    <entry file="file://$PROJECT_DIR$/routes/users.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="-11.56" vertical-offset="3213" max-vertical-offset="7599">
-          <caret line="206" column="49" selection-start-line="206" selection-start-column="49" selection-end-line="206" selection-end-column="49" />
+        <state vertical-scroll-proportion="0.0" vertical-offset="3318" max-vertical-offset="3927">
+          <caret line="218" column="59" selection-start-line="214" selection-start-column="0" selection-end-line="222" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/routes/users.js">
+    <entry file="file://$PROJECT_DIR$/websocket/chat-server.js">
       <provider selected="true" editor-type-id="text-editor">
-        <state vertical-scroll-proportion="0.52545154" vertical-offset="3318" max-vertical-offset="3927">
-          <caret line="214" column="0" selection-start-line="214" selection-start-column="0" selection-end-line="222" selection-end-column="0" />
+        <state vertical-scroll-proportion="-3.1" vertical-offset="6747" max-vertical-offset="7599">
+          <caret line="406" column="0" selection-start-line="406" selection-start-column="0" selection-end-line="438" selection-end-column="2" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/tcpsocket/chat-server.js">
+      <provider selected="true" editor-type-id="text-editor">
+        <state vertical-scroll-proportion="0.4981685" vertical-offset="0" max-vertical-offset="7106">
+          <caret line="16" column="0" selection-start-line="16" selection-start-column="0" selection-end-line="16" selection-end-column="0" />
           <folding />
         </state>
       </provider>
