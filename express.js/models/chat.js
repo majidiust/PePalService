@@ -14,7 +14,7 @@ var EntitySchema = new mongoose.Schema({
 });
 
 var RoomSchema = new mongoose.Schema({
-    Name: {type:String, required:true},
+    Name: {type:String},
     Entities :[{type: mongoose.Schema.ObjectId, ref:'Entity'}],
     Desc:{type:String},
     Members :[{type: mongoose.Schema.ObjectId, ref:'User'}],
@@ -22,6 +22,7 @@ var RoomSchema = new mongoose.Schema({
     Admins :[{type: mongoose.Schema.ObjectId, ref:'User'}],
     Creator : {type: mongoose.Schema.ObjectId, ref:'User'},
     Access:{type: String, enum :['Public','Private']}, // public,Private
+    Type:{type: String, enum :['G', 'I']},
     Password : {type: String},
     Invited :[{type: mongoose.Schema.ObjectId, ref:'User'}],
     Requests:[{type: mongoose.Schema.ObjectId, ref:'User'}],

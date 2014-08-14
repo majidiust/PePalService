@@ -3,6 +3,7 @@
  */
 var mongoose = require('mongoose');
 var bcrypt = require('bcrypt-nodejs');
+var datejs = require('safe_datejs');
 var EntityModel = require('./chat').EntityModel;
 var RoomModel = require('./chat').RoomModel;
 //Define our user schema
@@ -50,6 +51,23 @@ UserSchema.methods.verifyPassword = function (password, cb) {
           if (err) return cb(err);
           cb(null, isMatch);
       });
+};
+
+UserSchema.methods.hasRelationTo = function(other, exist, notExist){
+  try{
+      this.populate('individuals', function(err, me){
+          for(var ins in me.individuals){
+              for(var o in ins.Members){
+                  if(other == o)
+                      exist(ins.id);
+              }
+          }
+          notExist();
+      });
+  }
+    catch(ex){
+        console.log(ex);
+    }
 };
 
 module.exports = mongoose.model('User', UserSchema);

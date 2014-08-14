@@ -1,6 +1,7 @@
 var WebsocketMessageList = {
-    Token: { code: "0", message: "Token" },
-    SendTextMessageTo: { code: "1", message:"SendTextMessage"}
+    Token: { code: "0", Message: "Token" },
+    SendTextMessageTo: { code: "1", Message:"SendTextMessage"},
+    CreateIndividualRoom: {code : "2", Message: "CreateIndividualRoom"}
 };
 
 module.exports.WebsocketMessageList = WebsocketMessageList;

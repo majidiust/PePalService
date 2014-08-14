@@ -2,8 +2,8 @@ var webSocketsServerPort = 1337;
 // websocket and http servers
 var webSocketServer = require('websocket').server;
 var TokenModel = require('../models/token');
-var EntityModel = require('../model/chat').EntityModel;
-var RoomModel = require('../model/chat').RoomModel;
+var EntityModel = require('../models/chat').EntityModel;
+var RoomModel = require('../models/chat').RoomModel;
 var ErrorCodes = require('../libs/error-codes').AuthResultCode;
 var SuccessCodes = require('../libs/success-codes').SuccessCode;
 var MessageType = require('../libs/msg-types').WebsocketMessageList;
@@ -70,7 +70,8 @@ var initWebSocket = function () {
                                 clients[connection.id].attempts = 0;
                                 clients[connection.id].authResult = connection.authResult;
                                 clients[connection.id].user = connection.user;
-                                connection.send(createResultTextData(CommandList.Authorized.message, CommandList.Authorized.code));
+                                clients[connection.id].connection = connection;
+                                connection.send(createResultTextData(CommandList.Authorized.Message, CommandList.Authorized.code));
                                 clients[connection.id].startWorker();
                             },
                             function () {
@@ -93,6 +94,10 @@ var initWebSocket = function () {
                         if (object.requestCode != undefined) {
                             if (object.requestCode == MessageType.SendTextMessageTo.code) {
                                 if (object.messageContent) {
+                                    if (!object.roomId) {
+                                        connection.send(createResultTextData(ErrorCodes.RoomIdIsEmpty.code, ErrorCodes.RoomIdIsEmpty.Message));
+                                        return;
+                                    }
                                     var publishType = 'Now';
                                     if (object.publishType) {
                                         if (object.publishType == 'Now' || object.publishType == 'Scheduled') {
@@ -109,18 +114,28 @@ var initWebSocket = function () {
                                             return;
                                         }
                                     }
+                                    console.log("user that wants to send message is : " + clients[connection.id].user.id);
                                     var event = new EntityModel({
                                         Type: 'Text',
                                         Content: object.messageContent,
-                                        Creator: object.user.id,
-                                        CreatorUserName: object.user.username,
+                                        Creator: clients[connection.id].user.id,
+                                        CreatorUserName: clients[connection.id].user.userName,
                                         PublishType: publishType
                                     });
-                                    event.PublishDate = object.publishDate;
+                                    if (object.publishDate)
+                                        event.PublishDate = object.publishDate;
                                     sendEventToRoom(clients[connection.id], event, object.roomId);
                                 }
                                 else {
                                     connection.send(createResultTextData(ErrorCodes.InvalidEventContent.code, ErrorCodes.InvalidEventContent.Message));
+                                }
+                            }
+                            else if (object.requestCode == MessageType.CreateIndividualRoom.code) {
+                                if (object.otherParty) {
+                                    createIndividualRoom(clients[connection.id], object.otherParty);
+                                }
+                                else {
+                                    connection.send(createResultTextData(ErrorCodes.MissingOtherParty.code, ErrorCodes.MissingOtherParty.Message));
                                 }
                             }
                             else {
@@ -130,8 +145,8 @@ var initWebSocket = function () {
                         else {
                             connection.send(createResultTextData(ErrorCodes.InvalidRequestCode.code, ErrorCodes.InvalidRequestCode.Message));
                         }
-
-                    } else {
+                    }
+                    else {
                         sendAuthorizationRequest(connection);
                     }
                 }
@@ -152,8 +167,45 @@ var initWebSocket = function () {
     });
 };
 
-function createResultTextData(cmd, data) {
-    return JSON.stringify({ cmd: cmd, data: data });
+function createResultTextData(message, code) {
+    return JSON.stringify({ message: message, code: code });
+}
+
+function createParametrizedResultTextData(message, code, paramName, paramValue) {
+    var result = {
+        message: message,
+        code: code
+    };
+    result[paramName] = paramValue;
+    return JSON.stringify(result);
+}
+
+
+//OtherParty : id of other user
+function createIndividualRoom(client, otherParty) {
+    try {
+        client.user.hasRelationTo(otherParty, function (roomId) {
+            client.connection.send(createParametrizedResultTextData(SuccessCodes.RoomExist.Message, SuccessCodes.RoomExist.code, 'roomId', roomId));
+        }, function () {
+            //Create Room Instance
+            var newRoom = new RoomModel(
+                {
+                    Type: 'I',
+                    StartType: 'Now',
+                    Creator: client.user.id
+                }
+            );
+            newRoom.Admins.push(client.user.id);
+            newRoom.Admins.push(otherParty);
+            newRoom.Members.push(client.user.id);
+            newRoom.Members.push(otherParty);
+            newRoom.save(null);
+            client.connection.send(createParametrizedResultTextData(SuccessCodes.CreateRoomSuccessfully.Message, SuccessCodes.CreateRoomSuccessfully.code, 'roomId', newRoom.id));
+        });
+    }
+    catch (ex) {
+        console.log(ex);
+    }
 }
 
 function sendEventToRoom(client, event, roomId) {
@@ -180,8 +232,11 @@ function sendEventToRoom(client, event, roomId) {
                         client.connection.send(createResultTextData(ErrorCodes.PushEventToRoomError.Message, ErrorCodes.PushEventToRoomError.code));
                     }
                     else {
-                        room.Entities.push(event);
-                        for (var user in room.Members) {
+                        console.log("Event save successfully");
+                        room.Entities.push(event.id);
+                        for (var i = 0; i < room.Members.length; i++) {
+                            var user = room.Members[i];
+                            console.log(user);
                             user.nonDeliveredEvents.push(event.id);
                             user.save(function (err) {
                                 if (err) {
@@ -189,7 +244,7 @@ function sendEventToRoom(client, event, roomId) {
                                     client.connection.send(createResultTextData(ErrorCodes.PushEventToUSerError.Message, ErrorCodes.PushEventToUSerError.code));
                                 } else {
                                     console.log('event ublished successfully');
-                                    client.connection.send(createResultTextData(SuccessCode.EventPostedSuccessfully.Message, SuccessCode.EventPostedSuccessfully.code));
+                                    client.connection.send(createResultTextData(SuccessCodes.EventPostedSuccessfully.Message, SuccessCodes.EventPostedSuccessfully.code));
                                 }
                             });
                         }
@@ -202,7 +257,7 @@ function sendEventToRoom(client, event, roomId) {
 function sendAuthorizationRequest(connection) {
     try {
         if (connection && connection.connected) {
-            connection.send(createResultTextData(CommandList.TokenRequest.message, CommandList.TokenRequest.code));
+            connection.send(createResultTextData(CommandList.TokenRequest.Message, CommandList.TokenRequest.code));
         }
     }
     catch (ex) {
@@ -213,7 +268,7 @@ function sendAuthorizationRequest(connection) {
 function addBackgroundWorker(object) {
     object.startWorker = function () {
         object.backgrounWorker = setInterval(function () {
-            sendEventsToUser(object.user);
+            sendEventsToUser(object.user, object.connection);
         }, 2000);
     };
     object.stopWorker = function () {
@@ -269,35 +324,42 @@ function isAuthorized(request, successCallback, errorCallback) {
 
 function sendEventsToUser(user, connection) {
     try {
-        for (var i = 0; i < user.nonDeliveredEvents.length; i++) {
-            var event = user.nonDeliveredEvents[i];
-            var changed = false;
-            if (event.PublishType == 'Now' || (event.PublishType == 'Scheduled' && event.CreateDate >= (new Date()).AsDateJs())) {
-                connection.send(createEventMessage(event));
-                changed = true;
+        User.findOne({ '_id': user.id }).populate('nonDeliveredEvents').exec(function (err, newUser) {
+            if (!err && newUser) {
+                user = newUser;
+                for (var i = 0; i < user.nonDeliveredEvents.length; i++) {
+
+                    var event = user.nonDeliveredEvents[i];
+                    var changed = false;
+                    if (event.PublishType == 'Now') {
+                        var msg = createEventMessage(event);
+                        connection.send(msg);
+                        changed = true;
+                    }
+                    if (changed) {
+                        event.Delivered.push(user.id);
+                        event.save(function (err) {
+                            if (err) {
+                                console.log('Error in save delivered in events document');
+                            }
+                            else {
+                                console.log('delivered user saved to event document');
+                            }
+                        });
+                        user.nonDeliveredEvents.splice(i, 1);
+                        user.save(function (err) {
+                            if (err) {
+                                console.log('Error in save remove event from event list in user document');
+                            }
+                            else {
+                                console.log('save remove event from event list in user document');
+                            }
+                        });
+                        break;
+                    }
+                }
             }
-            if (changed) {
-                event.Delivered.push(user.id);
-                event.save(function (err) {
-                    if (err) {
-                        console.log('Error in save delivered in events document');
-                    }
-                    else {
-                        console.log('delivered user saved to event document');
-                    }
-                });
-                user.nonDeliveredEvents.splice(index, 1);
-                user.save(function (err) {
-                    if (err) {
-                        console.log('Error in save remove event from event list in user document');
-                    }
-                    else {
-                        console.log('save remove event from event list in user document');
-                    }
-                });
-                break;
-            }
-        }
+        });
     }
     catch (ex) {
         console.log(ex);
@@ -305,21 +367,21 @@ function sendEventsToUser(user, connection) {
 }
 
 function createEventMessage(event) {
-    if (event.type == 'Text') {
-        createTextEventMessage(event);
+    if (event.Type == 'Text') {
+        return createTextEventMessage(event);
     }
 }
 
 function createTextEventMessage(event) {
     var val = {
         type: 'Text',
-        date: event.CreateDate.AsDateJs(),
+        date: event.CreateDate,
         from: event.CreatorUserName,
         content: event.Content
     };
     var result = {
-        cmd: MessageType.SendTextMessageTo.value,
-        code: MessageType.SendTextMessageTo.code,
+        message: CommandList.NewMessage.Message,
+        code: CommandList.NewMessage.code,
         value: val
     };
     return JSON.stringify(result);
