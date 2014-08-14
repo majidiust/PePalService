@@ -3,7 +3,7 @@
  */
 var express = require('express');
 
-var User = require('../models/user');
+var User = require('../models/user').UserModel;
 var userControl = require("./users");
 var moment = require('moment')
 var datejs = require('safe_datejs');

@@ -6,6 +6,7 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var webSocketServer = require('./websocket/chat-server.js');
+var tcpSocketServer = require('./tcpsocket/chat-server.js');
 // Database
 //var mongo = require('mongoskin');
 //var db = mongo.db("mongodb://192.168.88.128:27017/sample3", {native_parser:true});
@@ -78,5 +79,6 @@ app.use(function(err, req, res, next) {
 
 
 webSocketServer.initWebSocket();
+tcpSocketServer.initTCPSocket();
 
 module.exports = app;

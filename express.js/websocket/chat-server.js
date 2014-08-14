@@ -1,14 +1,14 @@
 var webSocketsServerPort = 1337;
 // websocket and http servers
 var webSocketServer = require('websocket').server;
-var TokenModel = require('../models/token');
+var TokenModel = require('../models/token').TokenModel;
 var EntityModel = require('../models/chat').EntityModel;
 var RoomModel = require('../models/chat').RoomModel;
 var ErrorCodes = require('../libs/error-codes').AuthResultCode;
 var SuccessCodes = require('../libs/success-codes').SuccessCode;
 var MessageType = require('../libs/msg-types').WebsocketMessageList;
 var CommandList = require('../libs/cmd-list').WebsocketCommandList;
-var User = require('../models/user');
+var UserModel = require('../models/user').UserModel;
 var http = require('http');
 var jwt = require('jwt-simple');
 
@@ -119,7 +119,7 @@ var initWebSocket = function () {
                                         Type: 'Text',
                                         Content: object.messageContent,
                                         Creator: clients[connection.id].user.id,
-                                        CreatorUserName: clients[connection.id].user.userName,
+                                        CreatorUserName: clients[connection.id].user.username,
                                         PublishType: publishType
                                     });
                                     if (object.publishDate)
@@ -204,7 +204,7 @@ function createIndividualRoom(client, otherParty) {
             client.user.individuals.push(newRoom.id);
             client.user.save(null);
             client.connection.send(createParametrizedResultTextData(SuccessCodes.CreateRoomSuccessfully.Message, SuccessCodes.CreateRoomSuccessfully.code, 'roomId', newRoom.id));
-            User.findOne({ '_id': client.user.id }, function(err, remote){
+            UserModel.findOne({ '_id': otherParty }, function(err, remote){
                 if(err){
                     console.log('Could not find remote party');
                 }
@@ -309,7 +309,7 @@ function isAuthorized(request, successCallback, errorCallback) {
             if (errorCallback != null)
                 errorCallback();
         }
-        User.findOne({ '_id': decoded.iss }).populate('nonDeliveredEvents').exec(function (err, user) {
+        UserModel.findOne({ '_id': decoded.iss }).populate('nonDeliveredEvents').exec(function (err, user) {
             if (!err) {
                 TokenModel.find({ token: request.token, state: true, userId: user.id }, function (err, tokens) {
                     if (tokens.length > 0) {
@@ -341,7 +341,7 @@ function isAuthorized(request, successCallback, errorCallback) {
 
 function sendEventsToUser(user, connection) {
     try {
-        User.findOne({ '_id': user.id }).populate('nonDeliveredEvents').exec(function (err, newUser) {
+        UserModel.findOne({ '_id': user.id }).populate('nonDeliveredEvents').exec(function (err, newUser) {
             if (!err && newUser) {
                 user = newUser;
                 for (var i = 0; i < user.nonDeliveredEvents.length; i++) {
@@ -407,7 +407,7 @@ function createTextEventMessage(event) {
 function hasUserRelationToOther(me, other, exist, notExist){
     try{
         console.log("check is two user make chat before ? ");
-        User.findOne({'_id':me.id}).populate('individuals').exec(function (err, user) {
+        UserModel.findOne({'_id':me.id}).populate('individuals').exec(function (err, user) {
             console.log(user);
             var e = false;
             var roomid ;

@@ -6,51 +6,106 @@ var bcrypt = require('bcrypt-nodejs');
 var datejs = require('safe_datejs');
 var EntityModel = require('./chat').EntityModel;
 var RoomModel = require('./chat').RoomModel;
+var Schema = mongoose.Schema;
 //Define our user schema
-var UserSchema   = new mongoose.Schema({
-  userName: {type: String ,  unique: true},
-  password: String,
-  salt: String,
-  verified: Boolean,
-  accountState : Boolean,
-  registerDate : {type: Date, default: (new Date()).AsDateJs()},
-  firstName : String,
-  lastName : String,
-  birthDate : String,
-  gender : Boolean,
-  email :  {type: String ,  unique: true},
-  wallPapaerPhoto : String,
-  groups : [{type: mongoose.Schema.ObjectId, ref:'Room'}],
-  individuals : [{type: mongoose.Schema.ObjectId, ref:'Room'}],
-  nonDeliveredEvents : [{type: mongoose.Schema.ObjectId, ref:'Entity'}]
+
+var UserRole = new Schema({
+    rolename: {type: String},
+    roledesc: String
+});
+
+var UserActivity = new Schema({
+    activityname: { type: String, required: true},
+    activitydate: Date,
+    activitydesc: String
+});
+
+var User = new Schema({
+    username: {type: String, unique: true, required: true},
+    hashedpassword: {
+        type: String,
+        required: true
+    },
+    salt: {
+        type: String,
+        required: true
+    },
+    registerdate: {type: String, default: Date.now},
+    roles: [UserRole],
+    activities: [UserActivity],
+    firstname: String,
+    lastname: String,
+    mobileNumber: String,
+    gender: Boolean,
+    email: {type: String, unique: true, required: true},
+    isaproved: Boolean,
+    islockedout: Boolean,
+    wallPapaerPhoto: String,
+    groups: [
+        {type: mongoose.Schema.ObjectId, ref: 'Room'}
+    ],
+    individuals: [
+        {type: mongoose.Schema.ObjectId, ref: 'Room'}
+    ],
+    nonDeliveredEvents: [
+        {type: mongoose.Schema.ObjectId, ref: 'Entity'}
+    ]
 });
 
 
-UserSchema.pre('save', function (callback) {
-    console.log('pre saved of user');
+User.pre('save', function (callback) {
+    console.log("pre saved user function");
     var user = this;
-    // Break out if the password hasn't changed
-    if (!user.isModified('password')) return callback();
-
-    // Password changed so we need to hash it
-    bcrypt.genSalt(5, function (err, salt) {
-        if (err) return callback(err);
-
-        bcrypt.hash(user.password, salt, null, function (err, hash) {
-            if (err) return callback(err);
-            user.password = hash;
-            user.salt = salt;
-            callback();
+    if (!user.isModified('hashedpassword')) return callback();
+    else {
+        bcrypt.genSalt(5, function (err, salt) {
+            if (err)
+                return callback(err);
+            else {
+                bcrypt.hash(user.hashedpassword, salt, null, function (err, hash) {
+                    if (err)
+                        return callback(err);
+                    else{
+                        user.hashedpassword = hash;
+                        user.salt = salt;
+                        callback();
+                    }
+                });
+            }
         });
-    });
+    }
 });
 
-UserSchema.methods.verifyPassword = function (password, cb) {
-      bcrypt.compare(password, this.password, function (err, isMatch) {
-          console.log("verify password : " + password + " : " + isMatch);
-          if (err) return cb(err);
-          cb(null, isMatch);
-      });
-};
+User.methods.verifyPassword = function (password, cb) {
+    bcrypt.compare(password, this.hashedpassword, function (err, isMatch) {
+        if (err)
+            return cb(err);
+        else {
+            cb(null, isMatch);
+        }
+    });
+}
 
-module.exports = mongoose.model('User', UserSchema);
+User.methods.getBrief = function () {
+    var result = {
+        id: this.id,
+        username: this.username,
+        email: this.email,
+        firstName: this.firstname,
+        lastName: this.lastname,
+        registerDate: this.registerdate,
+        mobileNumber: this.mobileNumber,
+        gender: this.gender,
+        individuals : this.individuals,
+        groups : this.groups
+    };
+    return result;
+}
+
+User.virtual('userId')
+    .get(function () {
+        return this.id;
+    });
+
+var UserModel = mongoose.model('User', User);
+module.exports.UserModel = UserModel;

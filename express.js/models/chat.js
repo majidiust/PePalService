@@ -1,5 +1,5 @@
 var mongoose = require('mongoose');
-var UserModel = require('./user');
+var UserModel = require('./user').UserModel;
 var datejs = require('safe_datejs');
 
 var EntitySchema = new mongoose.Schema({
