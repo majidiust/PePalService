@@ -211,15 +211,44 @@ function getCurrentProfile(req, res){
     res.json(req.user.getBrief());
 }
 
+function getIndividualContacts(req, res){
+    userModel.findOne({'_id':req.user.id}).populate("individuals").exec(function(err, users){
+       var result = [];
+       for(var i = 0 ; i < users.individuals.length ; i++){
+            result[i] = users.individuals[i];
+       }
+       res.json(result);
+    });
+}
+
+function getGroupContacts(req, res){
+    userModel.findOne({'_id':req.user.id}).populate("groups").exec(function(err, users){
+        var result = [];
+        for(var i = 0 ; i < users.groups.length ; i++){
+            result[i] = users.groups[i];
+        }
+        res.json(result);
+    });
+}
+
+function getUsernameViaUserId(req, res){
+    userModel.findOne({'_id':req.params.userId}, function(err, user){
+        res.json(user);
+    });
+}
 
 // ----------------------------------------------- Routes
 router.route('/signout').post(requireAuthentication, signout);
 router.route('/signin').post(signin);
 router.route('/signup').post(signup);
-router.route('/userList').get(requireAuthentication, getUserList);
-router.route('/getUserByMail/:email').get(requireAuthentication, getUser);
 router.route('/updateProfile').post(requireAuthentication, updateProfie);
+
+router.route('/getUserByMail/:email').get(requireAuthentication, getUser);
+router.route('/userList').get(requireAuthentication, getUserList);
 router.route('/getCurrentProfile').get(requireAuthentication, getCurrentProfile);
+router.route('/getIndividualContacts').get(requireAuthentication, getIndividualContacts);
+router.route('/getGroupContacts').get(requireAuthentication, getGroupContacts);
+router.route('/getUsernameViaUserId/:userId').get(requireAuthentication, getUsernameViaUserId);
 
 
 module.exports = router;

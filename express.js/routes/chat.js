@@ -3,7 +3,7 @@
  */
 var express = require('express');
 
-var User = require('../models/user').UserModel;
+var UserModel = require('../models/user').UserModel;
 var userControl = require("./users");
 var moment = require('moment')
 var datejs = require('safe_datejs');
@@ -24,36 +24,35 @@ function createParametrizedResultTextData(message, code, paramName, paramValue) 
     return (result);
 }
 
-function hasUserRelationToOther(me, other, exist, notExist){
-    try{
+function hasUserRelationToOther(me, other, exist, notExist) {
+    try {
         console.log("check is two user make chat before ? ");
-        User.findOne({'_id':me.id}).populate('individuals').exec(function (err, user) {
+        User.findOne({'_id': me.id}).populate('individuals').exec(function (err, user) {
             console.log(user);
             var e = false;
-            var roomid ;
-            for(var i = 0 ; i < user.individuals.length ; i++){
-                for(var j = 0 ;  j < user.individuals[i].Members.length ; j++){
-                    if(user.individuals[i].Members[j] == other) {
+            var roomid;
+            for (var i = 0; i < user.individuals.length; i++) {
+                for (var j = 0; j < user.individuals[i].Members.length; j++) {
+                    if (user.individuals[i].Members[j] == other) {
                         console.log('room id is : ' + user.individuals[i].id);
                         roomid = user.individuals[i].id;
                         e = true;
                         break;
                     }
                 }
-                if(e == true)
+                if (e == true)
                     break;
             }
-            if(e == true)
-            {
+            if (e == true) {
                 exist(roomid);
             }
-            else{
+            else {
                 notExist();
             }
 
         });
     }
-    catch(ex){
+    catch (ex) {
         console.log(ex);
     }
 };
@@ -66,7 +65,7 @@ function createResultTextData(message, code) {
 //OtherParty : id of other user
 var createIndividualRoom = function (req, res) {
     try {
-        if(!req.body.otherParty){
+        if (!req.body.otherParty) {
             res.json(createResultTextData(ErrorCodes.MissingOtherParty.code, ErrorCodes.MissingOtherParty.Message));
         }
         else {
@@ -112,7 +111,110 @@ var createIndividualRoom = function (req, res) {
     }
 };
 
+function sendTextMessageTo(req, res) {
+    var roomId = req.body.roomId;
+
+    if (!req.body.roomId) {
+        res.json(createResultTextData(ErrorCodes.RoomIdIsEmpty.code, ErrorCodes.RoomIdIsEmpty.Message));
+        return;
+    }
+    var publishType = 'Now';
+    if (req.body.publishType) {
+        if (req.body.publishType == 'Now' || req.body.publishType == 'Scheduled') {
+            publishType = req.body.publishType;
+        }
+        else {
+            res.json(createResultTextData(ErrorCodes.InvalidEventPublishType.code, ErrorCodes.InvalidEventPublishType.Message));
+            return;
+        }
+    }
+    if (publishType == 'Scheduled') {
+        if (!req.body.publishDate) {
+            res.json(createResultTextData(ErrorCodes.InvalidEventPublishDate.code, ErrorCodes.InvalidEventPublishDate.Message));
+            return;
+        }
+    }
+
+
+    RoomModel.findOne({'_id': roomId})
+        .populate('Members')
+        .exec(function (err, room) {
+            if (err) {
+                console.log('error in publish event to room members');
+                res.json(createResultTextData(ErrorCodes.PushEventToRoomError.Message, ErrorCodes.PushEventToRoomError.code));
+            }
+            else if (!room) {
+                console.log('specific room not found');
+                res.json(createResultTextData(ErrorCodes.RoomDoesNotExist.Message, ErrorCodes.RoomDoesNotExist.code));
+            }
+            else {
+                /*
+                 *    1.save event in event document
+                 *    2.save event ref to room event collection
+                 *    3.push event ref to room members queue
+                 */
+                var event = new EntityModel({
+                    Type: 'Text',
+                    Content: req.body.messageContent,
+                    Creator: req.user.id,
+                    CreatorUserName: req.user.username,
+                    PublishType: publishType
+                });
+                event.save(function (err) {
+                    if (err) {
+                        console.log('error in inserting event in document');
+                        res.json(createResultTextData(ErrorCodes.PushEventToRoomError.Message, ErrorCodes.PushEventToRoomError.code));
+                    }
+                    else {
+                        console.log("Event save successfully");
+                        room.Entities.push(event.id);
+                        for (var i = 0; i < room.Members.length; i++) {
+                            var user = room.Members[i];
+                            console.log(user);
+                            user.nonDeliveredEvents.push(event.id);
+                            user.save(function (err) {
+                                if (err) {
+                                    console.log('error in inserting event to user event queue');
+                                    res.json(createResultTextData(ErrorCodes.PushEventToUSerError.Message, ErrorCodes.PushEventToUSerError.code));
+                                } else {
+                                    console.log('event ublished successfully');
+                                    res.json(createResultTextData(SuccessCodes.EventPostedSuccessfully.Message, SuccessCodes.EventPostedSuccessfully.code));
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+        });
+}
+
+function getIncomingMessage(req, res) {
+    UserModel.findOne({'_id': req.user}).populate('nonDeliveredEvents').exec(function (err, user) {
+        if (user.nonDeliveredEvents.length > 0) {
+            var event = user.nonDeliveredEvents[0];
+            var val = {
+                type: 'Text',
+                date: event.CreateDate,
+                from: event.CreatorUserName,
+                content: event.Content
+            };
+            var result = {
+                message: CommandList.NewMessage.Message,
+                code: CommandList.NewMessage.code,
+                value: val
+            };
+            user.nonDeliveredEvents.splice(0, 1);
+            res.send(result);
+        }
+        else{
+            res.json(createResultTextData(SuccessCodes.NoMoreMessage.Message, SuccessCodes.NoMoreMessage.code));
+        }
+    });
+}
+
 //-------------------------------------Routes
 router.route('/createIndividualRoom').post(userControl.requireAuthentication, createIndividualRoom);
+router.route('/sendTextMessageTo').post(userControl.requireAuthentication, sendTextMessageTo);
+router.route('/getIncomingMessage').get(userControl.requireAuthentication, getIncomingMessage);
 
 module.exports = router;
