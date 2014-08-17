@@ -8,6 +8,7 @@ var EntitySchema = new mongoose.Schema({
     Content: {type:String, required:true},
     Creator :{type: mongoose.Schema.ObjectId, ref:'User'},
     CreatorUserName: {type: String},
+    RoomId : {type: mongoose.Schema.ObjectId, ref:'Room'},
     PublishType: {type: String, enum: ['Scheduled', 'Now']}, // Scheduled, now
     PublishDate: {type: Date, default: (new Date()).AsDateJs()},
     Delivered:[{type: mongoose.Schema.ObjectId, ref:'User'}]

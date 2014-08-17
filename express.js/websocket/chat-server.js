@@ -120,7 +120,8 @@ var initWebSocket = function () {
                                         Content: object.messageContent,
                                         Creator: clients[connection.id].user.id,
                                         CreatorUserName: clients[connection.id].user.username,
-                                        PublishType: publishType
+                                        PublishType: publishType,
+                                        RoomId: object.roomId
                                     });
                                     if (object.publishDate)
                                         event.PublishDate = object.publishDate;
@@ -394,7 +395,8 @@ function createTextEventMessage(event) {
         type: 'Text',
         date: event.CreateDate,
         from: event.CreatorUserName,
-        content: event.Content
+        content: event.Content,
+        roomId: event.RoomId
     };
     var result = {
         message: CommandList.NewMessage.Message,

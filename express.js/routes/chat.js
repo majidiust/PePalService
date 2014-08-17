@@ -11,6 +11,7 @@ var EntityModel = require('../models/chat').EntityModel;
 var RoomModel = require('../models/chat').RoomModel;
 var ErrorCodes = require('../libs/error-codes').AuthResultCode;
 var SuccessCodes = require('../libs/success-codes').SuccessCode;
+var CommandList = require('../libs/cmd-list').WebsocketCommandList;
 
 var router = express.Router();
 
@@ -112,13 +113,14 @@ var createIndividualRoom = function (req, res) {
 };
 
 function sendTextMessageTo(req, res) {
-    var roomId = req.body.roomId;
 
     if (!req.body.roomId) {
         res.json(createResultTextData(ErrorCodes.RoomIdIsEmpty.code, ErrorCodes.RoomIdIsEmpty.Message));
         return;
     }
     var publishType = 'Now';
+    var roomId = req.body.roomId;
+
     if (req.body.publishType) {
         if (req.body.publishType == 'Now' || req.body.publishType == 'Scheduled') {
             publishType = req.body.publishType;
@@ -140,7 +142,7 @@ function sendTextMessageTo(req, res) {
         .populate('Members')
         .exec(function (err, room) {
             if (err) {
-                console.log('error in publish event to room members');
+                console.log('error in publish event to room members : ' + err);
                 res.json(createResultTextData(ErrorCodes.PushEventToRoomError.Message, ErrorCodes.PushEventToRoomError.code));
             }
             else if (!room) {
@@ -158,11 +160,12 @@ function sendTextMessageTo(req, res) {
                     Content: req.body.messageContent,
                     Creator: req.user.id,
                     CreatorUserName: req.user.username,
-                    PublishType: publishType
+                    PublishType: publishType,
+                    RoomId: roomId
                 });
                 event.save(function (err) {
                     if (err) {
-                        console.log('error in inserting event in document');
+                        console.log('error in inserting event in document ' + err);
                         res.json(createResultTextData(ErrorCodes.PushEventToRoomError.Message, ErrorCodes.PushEventToRoomError.code));
                     }
                     else {
@@ -196,7 +199,8 @@ function getIncomingMessage(req, res) {
                 type: 'Text',
                 date: event.CreateDate,
                 from: event.CreatorUserName,
-                content: event.Content
+                content: event.Content,
+                roomId : event.RoomId
             };
             var result = {
                 message: CommandList.NewMessage.Message,
@@ -204,10 +208,11 @@ function getIncomingMessage(req, res) {
                 value: val
             };
             user.nonDeliveredEvents.splice(0, 1);
+            user.save();
             res.send(result);
         }
         else{
-            res.json(createResultTextData(SuccessCodes.NoMoreMessage.Message, SuccessCodes.NoMoreMessage.code));
+            res.send(createResultTextData(SuccessCodes.NoMoreMessage.Message, SuccessCodes.NoMoreMessage.code), 401);
         }
     });
 }
