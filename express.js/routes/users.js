@@ -189,11 +189,11 @@ function getUserList(req, res){
             res.send(err, 401);
         else {
             var results = [];
-            for (var i = 0; i < users.length; i++) {
-                results.push(users[i].getBrief());
+            for (var i = 0; i < users.length; i++)
+                if(users[i].id != req.user.id)
+                    results.push(users[i].getBrief());
             }
             res.json(results);
-        }
     });
 }
 
