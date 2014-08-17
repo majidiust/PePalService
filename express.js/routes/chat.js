@@ -86,24 +86,31 @@ var createIndividualRoom = function (req, res) {
                 newRoom.Admins.push(req.body.otherParty);
                 newRoom.Members.push(req.user.id);
                 newRoom.Members.push(req.body.otherParty);
-                newRoom.save(null);
-                req.user.individuals.push(newRoom.id);
-                req.user.save(null);
-                res.json(createParametrizedResultTextData(SuccessCodes.CreateRoomSuccessfully.Message, SuccessCodes.CreateRoomSuccessfully.code, 'roomId', newRoom.id));
-                User.findOne({ '_id': req.user.id }, function (err, remote) {
-                    if (err) {
-                        console.log('Could not find remote party');
+                newRoom.save(function(err){
+                    if(err)
+                    res.send(err, 401);
+                    else{
+                        req.user.individuals.push(newRoom.id);
+                        req.user.save(null);
+                        UserModel.findOne({ '_id': req.user.id }, function (err, remote) {
+                            if (err) {
+                                console.log('Could not find remote party');
+                            }
+                            else if (!remote) {
+                                console.log('Could not find remote party');
+                            }
+                            else {
+                                console.log("room added to remote party successfully");
+                                console.log(remote);
+                                remote.individuals.push(newRoom.id);
+                                remote.save(null);
+                                res.json(createParametrizedResultTextData(SuccessCodes.CreateRoomSuccessfully.Message, SuccessCodes.CreateRoomSuccessfully.code, 'roomId', newRoom.id));
+
+                            }
+                        })
                     }
-                    else if (!remote) {
-                        console.log('Could not find remote party');
-                    }
-                    else {
-                        console.log("room added to remote party successfully");
-                        console.log(remote);
-                        remote.individuals.push(newRoom.id);
-                        remote.save(null);
-                    }
-                })
+                });
+
             });
         }
     }
