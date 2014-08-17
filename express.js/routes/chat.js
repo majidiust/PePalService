@@ -28,7 +28,7 @@ function createParametrizedResultTextData(message, code, paramName, paramValue) 
 function hasUserRelationToOther(me, other, exist, notExist) {
     try {
         console.log("check is two user make chat before ? ");
-        User.findOne({'_id': me.id}).populate('individuals').exec(function (err, user) {
+        UserModel.findOne({'_id': me.id}).populate('individuals').exec(function (err, user) {
             console.log(user);
             var e = false;
             var roomid;
