@@ -92,7 +92,7 @@ var createIndividualRoom = function (req, res) {
                     else{
                         req.user.individuals.push(newRoom.id);
                         req.user.save(null);
-                        UserModel.findOne({ '_id': req.user.id }, function (err, remote) {
+                        UserModel.findOne({ '_id': req.body.otherParty }, function (err, remote) {
                             if (err) {
                                 console.log('Could not find remote party');
                             }
