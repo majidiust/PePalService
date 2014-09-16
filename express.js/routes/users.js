@@ -159,6 +159,7 @@ function signup(req, res){
     if(!req.body.phonenumber || !req.body.password || req.body.email)
     {
         error = true;
+        console.log("Bad params");
         res.send("", 400);
     }
     else {
