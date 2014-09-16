@@ -11,7 +11,7 @@ var requireAuthentication = function (req, res, next) {
     if (req.headers.token != undefined) {
         var decoded = jwt.decode(req.headers.token, "729183456258456");
         if (decoded.exp <= Date.now) {
-            res.send("Access token has expired", 400);
+            res.send("Access token has expired", 406);
         }
         userModel.findOne({ '_id': decoded.iss }, function (err, user) {
             if (!err) {
@@ -56,105 +56,130 @@ function updateUserActivity(activity, user)
 }
 
 function signout(req, res){
-    tokenModel.findOne({ token: req.headers.token, userId: req.user.userId }, function (err, token) {
-        if (err) {
-            return next(err);
-        }
-        else {
-            token.state = false;
-            token.save(function (err) {
-                if (err)
-                    return next(err);
-                else {
-                    res.json({ state: true });
-                }
-                console.log("token updated successfully");
-            });
-        }
-    });
+    try {
+        tokenModel.findOne({ token: req.headers.token, userId: req.user.userId }, function (err, token) {
+            if (err) {
+                res.send(err, 500);
+            }
+            else if(!token){
+                res.send("", 404);
+            }
+            else {
+                token.state = false;
+                token.save(function (err) {
+                    if (err)
+                        res.send(err, 500);
+                    else {
+                        res.send("", 202);
+                    }
+                    console.log("token updated successfully");
+                });
+            }
+        });
+    }
+    catch(ex){
+        console.log(ex);
+        res.send(ex, 500);
+    }
 }
 
 function signin(req, res){
     var userName = req.body.username;
     var password = req.body.password;
-    userModel.findOne({ username: userName }, function (err, user) {
-        if (err) {
-            console.log(err);
-            res.send("Authentication error: error in fetching data", 401);
-            return;
-        }
-        else {
-            if (!user) {
-                console.log("user " + userName + " not found");
-                res.send("Authentic ation error : user not found", 401);
-                return;
+    var error = false;
+    if(!userName){
+        error = true;
+        res.send('{parameters:"[userName]"}', 400);
+    }
+    if(!passsword){
+        error = true;
+        res.send('{parameters:"[passsword]"}', 400);
+    }
+
+    if(error == false) {
+        userModel.findOne({ username: userName }, function (err, user) {
+            if (err) {
+                console.log(err);
+                res.send("Authentication error: error in fetching data", 500);
             }
             else {
-                user.verifyPassword(password, function (err, isMatch) {
-                    if (err) {
-                        console.log(err);
-                        res.send("Authentication error: error in verify password", 401);
-                        return;
-                    }
-                    else {
-                        if (!isMatch) {
-                            console.log("Authentication error : password is wrong");
-                            res.send("Authentication error : password is wrong", 401);
+                if (!user) {
+                    console.log("user " + userName + " not found");
+                    res.send("{ message : 'Authentic ation error : user not found'}", 404);
+                }
+                else {
+                    user.verifyPassword(password, function (err, isMatch) {
+                        if (err) {
+                            console.log(err);
+                            res.send("Authentication error: error in verify password", 500);
                         }
                         else {
-                            console.log("disabling other tokens for user  : " + userName);
-                            updateUserActivity("signin", user);
-                            disableOtherAccounts(user.id);
-                            console.log("alocationg new token for user  : " + userName);
-                            var expires = moment().add('days', 7).valueOf();
-                            var token = jwt.encode({
-                                    iss: user.id,
+                            if (!isMatch) {
+                                console.log("Authentication error : password is wrong");
+                                res.send("Authentication error : password is wrong", 406);
+                            }
+                            else {
+                                console.log("disabling other tokens for user  : " + userName);
+                                updateUserActivity("signin", user);
+                                disableOtherAccounts(user.id);
+                                console.log("alocationg new token for user  : " + userName);
+                                var expires = moment().add('days', 7).valueOf();
+                                var token = jwt.encode({
+                                        iss: user.id,
+                                        exp: expires
+                                    },
+                                    "729183456258456"
+                                );
+                                var newTokenIns = new tokenModel({
+                                    userId: user.id,
+                                    token: token,
                                     exp: expires
-                                },
-                                "729183456258456"
-                            );
-                            var newTokenIns = new tokenModel({
-                                userId: user.id,
-                                token: token,
-                                exp: expires
-                            });
-                            newTokenIns.save(function (err) {
-                                if (err) {
-                                    console.log("Error in saveing token in database : " + err);
-                                }
-                                else {
-                                    console.log("Token saved successfully");
-                                }
-                                res.json({ token: token });
-                                return;
-                            });
+                                });
+                                newTokenIns.save(function (err) {
+                                    if (err) {
+                                        console.log("Error in saveing token in database : " + err);
+                                    }
+                                    else {
+                                        console.log("Token saved successfully");
+                                    }
+                                });
+                                res.send({ token: token }, 202);
+                            }
                         }
-                    }
-                });
+                    });
+                }
             }
-        }
-    });
+        });
+    }
 }
 
 function signup(req, res){
     console.log("Signup new user");
-    var user = new userModel({
-        username            :   req.body.phonenumber,
-        hashedpassword      :   req.body.password,
-        email               :   req.body.email,
-        salt                :   "1",
-        isaproved           :   false,
-        islockedout         :   false
-    });
-    console.log(user);
-    user.roles.push({ rolename: 'user' });
-    user.activities.push({ activityname: 'signup', activitydate : (new Date()).AsDateJs() });
-    user.save(function (err) {
-        if (err)
-            res.send(err, 401);
-        else
-            res.json({message: 'user added to database successfully'});
-    });
+    var error =false;
+    if(!req.body.phonenumber || !req.body.password || req.body.email)
+    {
+        error = true;
+        res.send("", 400);
+    }
+    else {
+        var user = new userModel({
+            username: req.body.phonenumber,
+            hashedpassword: req.body.password,
+            email: req.body.email,
+            salt: "1",
+            isaproved: false,
+            islockedout: false
+        });
+        console.log(user);
+        user.roles.push({ rolename: 'user' });
+        user.activities.push({ activityname: 'signup', activitydate: (new Date()).AsDateJs() });
+        user.save(function (err) {
+            if (err)
+                res.send(err, 409);
+            else
+                res.send({username: user.username}, 201);
+        });
+    }
 }
 
 function updateProfie(req, res){
@@ -208,7 +233,7 @@ function getUser(req, res){
 }
 
 function getCurrentProfile(req, res){
-    res.json(req.user.getBrief());
+    res.send(req.user.getBrief(), 302);
 }
 
 function getIndividualContacts(req, res){
