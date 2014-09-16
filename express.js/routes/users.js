@@ -91,9 +91,9 @@ function signin(req, res){
         error = true;
         res.send('{parameters:"[userName]"}', 400);
     }
-    if(!passsword){
+    if(!password){
         error = true;
-        res.send('{parameters:"[passsword]"}', 400);
+        res.send('{parameters:"[password]"}', 400);
     }
 
     if(error == false) {
