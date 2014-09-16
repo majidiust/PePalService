@@ -156,7 +156,7 @@ function signin(req, res){
 function signup(req, res){
     console.log("Signup new user");
     var error =false;
-    if(!req.body.phonenumber || !req.body.password || req.body.email)
+    if(!req.body.phonenumber || !req.body.password || !req.body.email)
     {
         error = true;
         console.log("Bad params");
