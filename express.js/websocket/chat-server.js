@@ -139,6 +139,30 @@ var initWebSocket = function () {
                                     connection.send(createResultTextData(ErrorCodes.MissingOtherParty.code, ErrorCodes.MissingOtherParty.Message));
                                 }
                             }
+                            else if(object.requestCode == MessageType.GetIndividualRooms.code){
+                                console.log("Get individual rooms");
+                                UserModel.findOne({'_id':clients[connection.id].user.id}).populate("individuals").exec(function(err, users){
+                                    var result = [];
+                                    for(var i = 0 ; i < users.individuals.length ; i++){
+                                        result[i] = users.individuals[i];
+                                    }
+                                    clients[connection.id].connection.send(createParametrizedResultTextData(SuccessCodes.IndividualContacts.Message, SuccessCodes.IndividualContacts.code, 'rooms', result));
+                                });
+                            }
+                            else if(object.requestCode == MessageType.GetCurrentProfile.code){
+                                var result = clients[connection.id].user.getBrief();
+                                clients[connection.id].connection.send(createParametrizedResultTextData(SuccessCodes.CurrentProfile.Message, SuccessCodes.CurrentProfile.code, 'profile', result));
+                            }
+                            else if(object.requestCode == MessageType.GetUsernameViaUserId.code){
+                                if(object.userId) {
+                                    UserModel.findOne({'_id':clients[connection.id].params.userId}, function(err, user){
+                                        clients[connection.id].connection.send(createParametrizedResultTextData(SuccessCodes.UsernameViaUserId.Message, SuccessCodes.UsernameViaUserId.code, 'username', user));
+                                    });
+                                }
+                                else{
+                                    connection.send(createResultTextData(ErrorCodes.MissingUserId.code, ErrorCodes.MissingUserId.Message));
+                                }
+                            }
                             else {
                                 connection.send(createResultTextData(ErrorCodes.InvalidRequestCode.code, ErrorCodes.InvalidRequestCode.Message));
                             }

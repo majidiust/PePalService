@@ -16,7 +16,8 @@ var AuthResultCode = {
     InvalidEventPublishDate: {code: -15, Message:"InvalidEventPublishDate"},
 
     CreateRoomFailed: {code: -16, Message:"CreatedRoomFailed"},
-    MissingOtherParty: {code: -17, Message:"MissingOtherParty"}
+    MissingOtherParty: {code: -17, Message:"MissingOtherParty"},
+    MissingUserId: {code : -18, Message: "MissingUserId"}
 };
 
 module.exports.AuthResultCode = AuthResultCode;
