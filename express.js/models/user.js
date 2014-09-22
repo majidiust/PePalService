@@ -20,6 +20,13 @@ var UserActivity = new Schema({
     activitydesc: String
 });
 
+var Friend = new Schema({
+    friendId : {type: mongoose.Schema.ObjectId, ref: 'User'},
+    friendUsername : String,
+    status : Boolean,
+    beginner : {type: mongoose.Schema.ObjectId, ref: 'User'}
+});
+
 var User = new Schema({
     username: {type: String, unique: true, required: true},
     hashedpassword: {
@@ -49,7 +56,8 @@ var User = new Schema({
     ],
     nonDeliveredEvents: [
         {type: mongoose.Schema.ObjectId, ref: 'Entity'}
-    ]
+    ],
+    friends: [Friend]
 });
 
 

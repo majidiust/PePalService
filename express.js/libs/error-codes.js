@@ -17,7 +17,9 @@ var AuthResultCode = {
 
     CreateRoomFailed: {code: -16, Message:"CreatedRoomFailed"},
     MissingOtherParty: {code: -17, Message:"MissingOtherParty"},
-    MissingUserId: {code : -18, Message: "MissingUserId"}
+    MissingUserId: {code : -18, Message: "MissingUserId"},
+
+    FriendUsernameDoesnotExist: {code : -19, Message :"FriendUsernameDoesnotExist"}
 };
 
 module.exports.AuthResultCode = AuthResultCode;

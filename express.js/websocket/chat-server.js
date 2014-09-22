@@ -139,27 +139,61 @@ var initWebSocket = function () {
                                     connection.send(createResultTextData(ErrorCodes.MissingOtherParty.code, ErrorCodes.MissingOtherParty.Message));
                                 }
                             }
-                            else if(object.requestCode == MessageType.GetIndividualRooms.code){
+                            else if (object.requestCode == MessageType.GetIndividualRooms.code) {
                                 console.log("Get individual rooms");
-                                UserModel.findOne({'_id':clients[connection.id].user.id}).populate("individuals").exec(function(err, users){
+                                UserModel.findOne({'_id': clients[connection.id].user.id}).populate("individuals").exec(function (err, users) {
                                     var result = [];
-                                    for(var i = 0 ; i < users.individuals.length ; i++){
+                                    for (var i = 0; i < users.individuals.length; i++) {
                                         result[i] = users.individuals[i];
                                     }
                                     clients[connection.id].connection.send(createParametrizedResultTextData(SuccessCodes.IndividualContacts.Message, SuccessCodes.IndividualContacts.code, 'rooms', result));
                                 });
                             }
-                            else if(object.requestCode == MessageType.GetCurrentProfile.code){
+                            else if (object.requestCode == MessageType.GetCurrentProfile.code) {
                                 var result = clients[connection.id].user.getBrief();
                                 clients[connection.id].connection.send(createParametrizedResultTextData(SuccessCodes.CurrentProfile.Message, SuccessCodes.CurrentProfile.code, 'profile', result));
                             }
-                            else if(object.requestCode == MessageType.GetUsernameViaUserId.code){
-                                if(object.userId) {
-                                    UserModel.findOne({'_id':clients[connection.id].params.userId}, function(err, user){
+                            else if (object.requestCode == MessageType.GetUsernameViaUserId.code) {
+                                if (object.userId) {
+                                    UserModel.findOne({'_id': object.userId}, function (err, user) {
                                         clients[connection.id].connection.send(createParametrizedResultTextData(SuccessCodes.UsernameViaUserId.Message, SuccessCodes.UsernameViaUserId.code, 'username', user));
                                     });
                                 }
-                                else{
+                                else {
+                                    connection.send(createResultTextData(ErrorCodes.MissingUserId.code, ErrorCodes.MissingUserId.Message));
+                                }
+                            }
+                            else if (object.requestCode == MessageType.GetFriendList.code) {
+                                clients[connection.id].connection.send(createParametrizedResultTextData(SuccessCodes.ListOfFriends.Message, SuccessCodes.ListOfFriends.code, 'friends', clients[connection.id].user.friends));
+                            }
+                            else if (object.requestCode == MessageType.AddUserToFriend.code) {
+                                if (object.username) {
+                                    UserModel.findOne({'username': object.username}, function (err, user) {
+                                        if (user) {
+                                            var find = false;
+                                            for (var i = 0; i < clients[connection.id].user.friends.length; i++) {
+                                                if (clients[connection.id].user.friends[i].friendId == user.id) {
+                                                    clients[connection.id].connection.send(createParametrizedResultTextData(SuccessCodes.FriendAddedSuccessfully.Message, SuccessCodes.FriendAddedSuccessfully.code, 'friend', clients[connection.id].user.friends[i]));
+                                                    find = true;
+                                                    break;
+                                                }
+                                            }
+                                            if(!find) {
+                                                var link = { friendId: user.id, beginner: clients[connection.id].user.id, status: false, friendUsername: user.username};
+                                                clients[connection.id].user.friends.push(link);
+                                                var link2 = { friendId: clients[connection.id].user.id, beginner: clients[connection.id].user.id, status: false, friendUsername: clients[connection.id].user.username};
+                                                user.friends.push(link2);
+                                                clients[connection.id].user.save(null);
+                                                user.save(null);
+                                                clients[connection.id].connection.send(createParametrizedResultTextData(SuccessCodes.FriendAddedSuccessfully.Message, SuccessCodes.FriendAddedSuccessfully.code, 'friend', link));
+                                            }
+                                        }
+                                        else {
+                                            connection.send(createResultTextData(ErrorCodes.FriendUsernameDoesnotExist.code, ErrorCodes.FriendUsernameDoesnotExist.Message));
+                                        }
+                                    });
+                                }
+                                else {
                                     connection.send(createResultTextData(ErrorCodes.MissingUserId.code, ErrorCodes.MissingUserId.Message));
                                 }
                             }
@@ -229,14 +263,14 @@ function createIndividualRoom(client, otherParty) {
             client.user.individuals.push(newRoom.id);
             client.user.save(null);
             client.connection.send(createParametrizedResultTextData(SuccessCodes.CreateRoomSuccessfully.Message, SuccessCodes.CreateRoomSuccessfully.code, 'roomId', newRoom.id));
-            UserModel.findOne({ '_id': otherParty }, function(err, remote){
-                if(err){
+            UserModel.findOne({ '_id': otherParty }, function (err, remote) {
+                if (err) {
                     console.log('Could not find remote party');
                 }
-                else if(!remote){
+                else if (!remote) {
                     console.log('Could not find remote party');
                 }
-                else{
+                else {
                     console.log("room added to remote party successfully");
                     console.log(remote);
                     remote.individuals.push(newRoom.id);
@@ -430,36 +464,35 @@ function createTextEventMessage(event) {
     return JSON.stringify(result);
 }
 
-function hasUserRelationToOther(me, other, exist, notExist){
-    try{
+function hasUserRelationToOther(me, other, exist, notExist) {
+    try {
         console.log("check is two user make chat before ? ");
-        UserModel.findOne({'_id':me.id}).populate('individuals').exec(function (err, user) {
+        UserModel.findOne({'_id': me.id}).populate('individuals').exec(function (err, user) {
             console.log(user);
             var e = false;
-            var roomid ;
-            for(var i = 0 ; i < user.individuals.length ; i++){
-                for(var j = 0 ;  j < user.individuals[i].Members.length ; j++){
-                    if(user.individuals[i].Members[j] == other) {
+            var roomid;
+            for (var i = 0; i < user.individuals.length; i++) {
+                for (var j = 0; j < user.individuals[i].Members.length; j++) {
+                    if (user.individuals[i].Members[j] == other) {
                         console.log('room id is : ' + user.individuals[i].id);
                         roomid = user.individuals[i].id;
                         e = true;
                         break;
                     }
                 }
-                if(e == true)
-                break;
+                if (e == true)
+                    break;
             }
-            if(e == true)
-            {
+            if (e == true) {
                 exist(roomid);
             }
-            else{
+            else {
                 notExist();
             }
 
         });
     }
-    catch(ex){
+    catch (ex) {
         console.log(ex);
     }
 };
