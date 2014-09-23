@@ -8,30 +8,36 @@ var moment = require('moment')
 var datejs = require('safe_datejs');
 
 var requireAuthentication = function (req, res, next) {
-    if (req.headers.token != undefined) {
-        var decoded = jwt.decode(req.headers.token, "729183456258456");
-        if (decoded.exp <= Date.now) {
-            res.send("Access token has expired", 406);
+    try {
+        if (req.headers.token != undefined) {
+            var decoded = jwt.decode(req.headers.token, "729183456258456");
+            if (decoded.exp <= Date.now) {
+                res.send("Access token has expired", 406);
+            }
+            userModel.findOne({ '_id': decoded.iss }, function (err, user) {
+                if (user) {
+                    tokenModel.find({ token: req.headers.token, state: true, userId: user.id }, function (err, tokens) {
+                        if (tokens.length > 0) {
+                            req.user = user;
+                            return next();
+                        }
+                        else {
+                            res.send("Not authorized", 401);
+                        }
+                    })
+                }
+                else {
+                    res.send("Not authorized", 401);
+                }
+            });
         }
-        userModel.findOne({ '_id': decoded.iss }, function (err, user) {
-            if (!err) {
-                tokenModel.find({ token: req.headers.token, state: true, userId: user.id }, function (err, tokens) {
-                    if (tokens.length > 0) {
-                        req.user = user;
-                        return next();
-                    }
-                    else {
-                        res.send("Not authorized", 401);
-                    }
-                })
-            }
-            else {
-                res.send("Not authorized", 401);
-            }
-        });
+        else {
+            res.send("Not authorized", 401);
+        }
     }
-    else {
-        res.send("Not authorized", 401);
+    catch(ex){
+        console.log(ex);
+        res.send(ex, 500);
     }
 }
 
