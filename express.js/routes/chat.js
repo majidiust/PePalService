@@ -2,7 +2,6 @@
  * Created by Majid on 8/15/2014.
  */
 var express = require('express');
-
 var UserModel = require('../models/user').UserModel;
 var userControl = require("./users");
 var moment = require('moment')
@@ -12,9 +11,7 @@ var RoomModel = require('../models/chat').RoomModel;
 var ErrorCodes = require('../libs/error-codes').AuthResultCode;
 var SuccessCodes = require('../libs/success-codes').SuccessCode;
 var CommandList = require('../libs/cmd-list').WebsocketCommandList;
-
 var router = express.Router();
-
 //------------------------------------Helpers
 function createParametrizedResultTextData(message, code, paramName, paramValue) {
     var result = {
@@ -24,7 +21,6 @@ function createParametrizedResultTextData(message, code, paramName, paramValue) 
     result[paramName] = paramValue;
     return (result);
 }
-
 function hasUserRelationToOther(me, other, exist, notExist) {
     try {
         console.log("check is two user make chat before ? ");
@@ -57,11 +53,9 @@ function hasUserRelationToOther(me, other, exist, notExist) {
         console.log(ex);
     }
 };
-
 function createResultTextData(message, code) {
     return ({ message: message, code: code });
 };
-
 //------------------------------------Routes call backs
 //OtherParty : id of other user
 var createIndividualRoom = function (req, res) {
@@ -118,7 +112,6 @@ var createIndividualRoom = function (req, res) {
         console.log(ex);
     }
 };
-
 function sendTextMessageTo(req, res) {
 
     if (!req.body.roomId) {
@@ -197,7 +190,6 @@ function sendTextMessageTo(req, res) {
             }
         });
 }
-
 function getIncomingMessage(req, res) {
     UserModel.findOne({'_id': req.user}).populate('nonDeliveredEvents').exec(function (err, user) {
         if (user.nonDeliveredEvents.length > 0) {
@@ -223,10 +215,8 @@ function getIncomingMessage(req, res) {
         }
     });
 }
-
 //-------------------------------------Routes
 router.route('/createIndividualRoom').post(userControl.requireAuthentication, createIndividualRoom);
 router.route('/sendTextMessageTo').post(userControl.requireAuthentication, sendTextMessageTo);
 router.route('/getIncomingMessage').get(userControl.requireAuthentication, getIncomingMessage);
-
 module.exports = router;
