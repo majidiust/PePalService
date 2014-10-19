@@ -1,10 +1,8 @@
 var express = require('express');
 var router = express.Router();
 var userModel = require("../models/user").UserModel;
-var tokenModel = require("../models/token").TokenModel;
 var userControl = require("./users");
 var fileModel = require('../models/files').FileModel;
-var jwt = require('jwt-simple');
 var moment = require('moment')
 var datejs = require('safe_datejs');
 var path = require('path');
@@ -38,35 +36,35 @@ var options = {
 var uploader = require('blueimp-file-upload-expressjs')(options);
 /*------------------------------------------ Functions ----------------------------------*/
 
-function downloadFile(req, res){
-    try{
+function downloadFile(req, res) {
+    try {
         var fileId = req.params.fileId;
-        if(!fileId){
+        if (!fileId) {
             res.send('{parameters:"[fileId]"}', 400);
         }
-        else{
-            fileModel.findOne({'_id':fileId}).exec(function(err, fileInstance){
-                if(err){
+        else {
+            fileModel.findOne({'_id': fileId}).exec(function (err, fileInstance) {
+                if (err) {
                     res.send(err, 500);
                 }
-                else if(!fileInstance){
+                else if (!fileInstance) {
                     res.send("file not found", 404);
                 }
-                else{
+                else {
                     var hasAccess = false;
-                    for(var i = 0 ;i < fileInstance.acl.length; i++){
-                        if(fileInstance.acl[i].userId == req.user.id){
-                            if(fileInstance.acl[i].status == true){
+                    for (var i = 0; i < fileInstance.acl.length; i++) {
+                        if (fileInstance.acl[i].userId == req.user.id) {
+                            if (fileInstance.acl[i].status == true) {
                                 hasAccess = true;
                             }
                             break;
                         }
                     }
-                    if(!hasAccess){
+                    if (!hasAccess) {
                         res.send("Not allowed", 403);
                     }
-                    else{
-                        fileInstance.readCount +=1;
+                    else {
+                        fileInstance.readCount += 1;
                         fileInstance.save(null);
                         var file = fileInstance.physicalPath;
                         var filename = path.basename(file);
@@ -80,49 +78,49 @@ function downloadFile(req, res){
             });
         }
     }
-    catch(ex){
+    catch (ex) {
         console.log(ex);
         res.send(ex, 500);
     }
 }
 
-function getChilds(req, res){
-    try{
+function getChilds(req, res) {
+    try {
         var entityId = req.params.entityId;
-        if(!entityId){
+        if (!entityId) {
             res.send('{parameters:"[entityId]"}', 400);
         }
-        else{
-            fileModel.findOne({'_id':entityId}).exec(function(err, fileInstance){
-                if(err){
+        else {
+            fileModel.findOne({'_id': entityId}).exec(function (err, fileInstance) {
+                if (err) {
                     res.send(err, 500);
                 }
-                else if(!fileInstance){
+                else if (!fileInstance) {
                     res.send("entity not found", 404);
                 }
-                else{
-                    if(fileInstance.contentType != "Folder"){
+                else {
+                    if (fileInstance.contentType != "Folder") {
                         res.send("entity not found", 404);
                     }
-                    else{
+                    else {
                         var hasAccess = false;
-                        for(var i = 0 ;i < fileInstance.acl.length; i++){
-                            if(fileInstance.acl[i].userId == req.user.id){
-                                if(fileInstance.acl[i].status == true){
+                        for (var i = 0; i < fileInstance.acl.length; i++) {
+                            if (fileInstance.acl[i].userId == req.user.id) {
+                                if (fileInstance.acl[i].status == true) {
                                     hasAccess = true;
                                 }
                                 break;
                             }
                         }
-                        if(!hasAccess){
+                        if (!hasAccess) {
                             res.send("Not allowed", 403);
                         }
-                        else{
-                            fileModel.find({'parent':entityId}).exec(function(err, fileInstances){
-                                if(err){
+                        else {
+                            fileModel.find({'parent': entityId}).exec(function (err, fileInstances) {
+                                if (err) {
                                     res.send(err, 500);
                                 }
-                                else{
+                                else {
                                     res.json(fileInstances);
                                 }
                             });
@@ -132,13 +130,13 @@ function getChilds(req, res){
             });
         }
     }
-    catch(ex){
+    catch (ex) {
         console.log(ex);
         res.send(ex, 500);
     }
 }
 
-function getParentId(req, res){
+function getParentId(req, res) {
     try {
         var entityId = req.params.entityId;
         if (!entityId) {
@@ -158,13 +156,13 @@ function getParentId(req, res){
             });
         }
     }
-    catch(ex){
+    catch (ex) {
         console.log(ex);
         res.send(ex, 500);
     }
 }
 
-function getAccessType(req, res){
+function getAccessType(req, res) {
     try {
         var entityId = req.params.entityId;
         if (!entityId) {
@@ -184,70 +182,70 @@ function getAccessType(req, res){
             });
         }
     }
-    catch(ex){
+    catch (ex) {
         console.log(ex);
         res.send(ex, 500);
     }
 }
 
-function createDirectory(req, res){
-    try{
+function createDirectory(req, res) {
+    try {
         var dirName = req.body.fileName;
         var access = req.body.access;
         var parentId = req.body.parent;
-        if(!dirName){
+        if (!dirName) {
             res.send('{parameters:"[dirName]"}', 400);
         }
-        else if(!access){
+        else if (!access) {
             res.send('{parameters:"[access]"}', 400);
         }
-        else{
+        else {
             var newEntity = new fileModel({
                 contentType: "Folder",
-                readCount: 0 ,
+                readCount: 0,
                 entityName: dirName,
                 owner: req.user.id,
                 access: access,
                 status: true
             });
             newEntity.actionLog.push({userId: req.user.id, action: 'Create'});
-            if(parentId){
+            if (parentId) {
                 newEntity.save(null);
             }
-            else{
-                fileModel.findOne({'_id': parentId}).exec(function(err, folder){
-                    if(err){
+            else {
+                fileModel.findOne({'_id': parentId}).exec(function (err, folder) {
+                    if (err) {
                         res.send(err, 500);
                     }
-                    else if(!folder){
+                    else if (!folder) {
                         res.send("entity not found", 404);
                     }
-                    else if(folder.contentType.indexOf("Folder") != -1){
+                    else if (folder.contentType.indexOf("Folder") != -1) {
                         newEntity.parent = parentId;
                         newEntity.save(null);
                         res.send("Added successfully", 201);
                     }
-                    else{
+                    else {
                         res.send("you cant add file to the file", 404);
                     }
                 });
             }
         }
     }
-    catch(ex){
+    catch (ex) {
         console.log(ex);
         res.send(ex, 500);
     }
 }
 
-function moveEntity(req, res){
-    try{
+function moveEntity(req, res) {
+    try {
         var entityId = req.body.entityyId;
         var newParentId = req.body.newParentId;
-        if(!entityId){
+        if (!entityId) {
             res.send('{parameters:"[entityId]"}', 400);
         }
-        else{
+        else {
             fileModel.findOne({'_id': entityId}).exec(function (err, fileInstance) {
                 if (err) {
                     res.send(err, 500);
@@ -256,21 +254,21 @@ function moveEntity(req, res){
                     res.send("entity not found", 404);
                 }
                 else {
-                    if(!newParentId){
+                    if (!newParentId) {
                         fileInstance.parent = newParentId;
                         fileInstance.actionLog.push({userId: req.user.id, action: 'Move'});
                         fileInstance.save(null);
                         res.send("entity moved", 200);
                     }
-                    else{
-                        fileModel.findOne({'_id':newParentId}).exec(function(_err, _fileInstance){
-                            if(_err){
+                    else {
+                        fileModel.findOne({'_id': newParentId}).exec(function (_err, _fileInstance) {
+                            if (_err) {
                                 res.send(_err, 500);
                             }
-                            else if(!_fileInstance){
+                            else if (!_fileInstance) {
                                 res.send("parent not found", 404);
                             }
-                            else{
+                            else {
                                 fileInstance.parent = newParentId;
                                 fileInstance.actionLog.push({userId: req.user.id, action: 'Move'});
                                 fileInstance.save(null);
@@ -282,13 +280,13 @@ function moveEntity(req, res){
             });
         }
     }
-    catch(ex){
+    catch (ex) {
         console.log(ex);
         res.send(ex, 500);
     }
 }
 
-function deleteEntity(req, res){
+function deleteEntity(req, res) {
     try {
         var entityId = req.body.entityId;
         if (!entityId) {
@@ -311,20 +309,20 @@ function deleteEntity(req, res){
             });
         }
     }
-    catch(ex){
+    catch (ex) {
         console.log(ex);
         res.send(ex, 500);
     }
 }
 
-function changeAccess(req, res){
+function changeAccess(req, res) {
     try {
         var entityId = req.body.entityId;
         var access = req.body.access;
         if (!entityId) {
             res.send('{parameters:"[entityId]"}', 400);
         }
-        else if(access != "Public" || access != "Private" || access != "Friends" || !access){
+        else if (access != "Public" || access != "Private" || access != "Friends" || !access) {
             res.send('{parameters:"[access]"}', 400);
         }
         else {
@@ -344,20 +342,20 @@ function changeAccess(req, res){
             });
         }
     }
-    catch(ex){
+    catch (ex) {
         console.log(ex);
         res.send(ex, 500);
     }
 }
 
-function addAccessRole(req, res){
+function addAccessRole(req, res) {
     try {
         var entityId = req.body.entityId;
         var accessToUser = req.body.accessToUser;
         if (!entityId) {
             res.send('{parameters:"[entityId]"}', 400);
         }
-        else if(!accessToUser){
+        else if (!accessToUser) {
             res.send('{parameters:"[accessToUser]"}', 400);
         }
         else {
@@ -369,26 +367,26 @@ function addAccessRole(req, res){
                     res.send("entity not found", 404);
                 }
                 else {
-                    userModel.findOne({'_id': accessToUser}).exec(function(err, user){
-                        if(err)
+                    userModel.findOne({'_id': accessToUser}).exec(function (err, user) {
+                        if (err)
                             res.send(err, 500);
-                        else if(!user){
+                        else if (!user) {
                             res.send("user not found", 404);
                         }
-                        else{
+                        else {
                             var isExist = false;
-                            for(var i = 0 ; i < fileInstance.acl.length ; i++){
-                                if(fileInstance.acl[i].userId == user.id){
+                            for (var i = 0; i < fileInstance.acl.length; i++) {
+                                if (fileInstance.acl[i].userId == user.id) {
                                     isExist = true;
-                                    if(fileInstance.acl[i].status != true){
-                                        fileInstance.acl[i].changeLog.push({to : true, changeBy:req.user.id});
+                                    if (fileInstance.acl[i].status != true) {
+                                        fileInstance.acl[i].changeLog.push({to: true, changeBy: req.user.id});
                                     }
                                     fileInstance.acl[i].status = true;
                                     fileInstance.save(null);
                                     break;
                                 }
                             }
-                            if(!isExist){
+                            if (!isExist) {
                                 var accessRole = { userId: accessToUser, status: true};
                                 accessRole.changeLog = [];
                                 accessRole.changeLog.push({ to: true, changeBy: req.user.id});
@@ -403,23 +401,23 @@ function addAccessRole(req, res){
             });
         }
     }
-    catch(ex){
+    catch (ex) {
         console.log(ex);
         res.send(ex, 500);
     }
 }
 
-function removeAccessRole(req, res){
-    try{
+function removeAccessRole(req, res) {
+    try {
         var entityId = req.body.entityId;
         var accessToUser = req.body.accessToUser;
         if (!entityId) {
             res.send('{parameters:"[entityId]"}', 400);
         }
-        else if(!accessToUser){
+        else if (!accessToUser) {
             res.send('{parameters:"[accessToUser]"}', 400);
         }
-        else{
+        else {
             fileModel.findOne({'_id': entityId}).exec(function (err, fileInstance) {
                 if (err) {
                     res.send(err, 500);
@@ -429,11 +427,11 @@ function removeAccessRole(req, res){
                 }
                 else {
                     var isExist = false;
-                    for(var i = 0 ; i < fileInstance.acl.length ; i++){
-                        if(fileInstance.acl[i].userId == user.id){
+                    for (var i = 0; i < fileInstance.acl.length; i++) {
+                        if (fileInstance.acl[i].userId == user.id) {
                             isExist = true;
-                            if(fileInstance.acl[i].status != false){
-                                fileInstance.acl[i].changeLog.push({to : false, changeBy:req.user.id});
+                            if (fileInstance.acl[i].status != false) {
+                                fileInstance.acl[i].changeLog.push({to: false, changeBy: req.user.id});
                             }
                             fileInstance.acl[i].status = false;
                             fileInstance.save(null);
@@ -446,22 +444,73 @@ function removeAccessRole(req, res){
             });
         }
     }
-    catch(ex){
+    catch (ex) {
         console.log(ex);
         res.send(ex, 500)
     }
 }
 
-function changeAccessRole(currentUser, userId, status, currentEntityId){
-    try{
-        fileModel.find({parent:currentEntityId}).exec(function(err, entities){
-            if(!err){
-                for(var i = 0 ; i < entities.length ; i++){
-                    fileModel.findOne({'_id': entities[i].id}).exec(function(err, entity){
-                        if(entity){
+function uploadFile(req, res) {
+    try {
+        var parentId = req.body.parentId;
+        var access = req.body.access;
+        if (access != "Public" || access != "Private" || access != "Friends" || !access) {
+            res.send('{parameters:"[access]"}', 400);
+        }
+        else if (!parentId) {
+            res.send('{parameters:"[access]"}', 400);
+        }
+        else {
+            fileModel.findOne({'_id': parentId}).exec(function (err, entity) {
+                if (err) {
+                    res.send(err, 500);
+                }
+                else if (!entity) {
+                    res.send("file not found", 404);
+                }
+                else {
+                    uploader.post(req, res, function (obj) {
+                        var fileName = obj.files[0].name;
+                        var fileSize = obj.files[0].size;
+                        var mimeType = obj.files[0].type;
+                        var newEntity = new fileModel({
+                            parent: parentId,
+                            readCount: 0,
+                            access: access,
+                            owner: req.user.id,
+                            ContentType: 'File',
+                            entityName: fileName,
+                            MIMEType: mimeType,
+                            entitySize: fileSize,
+                            physicalPath: 'uploaded/files/' + fileName
+                        });
+                        newEntity.actionLog.push({userId: req.user.id, action: 'Create'});
+                        newEntity.save(null);
+                        res.send("Entity saved successfully", 201);
+                    });
+                }
+            });
+        }
+    }
+    catch (ex) {
+        console.log(ex);
+        res.send(ex, 500);
+    }
+}
+
+
+/* ------------------------------------------- Utility functions ------------------------------------------*/
+
+function changeAccessRole(currentUser, userId, status, currentEntityId) {
+    try {
+        fileModel.find({parent: currentEntityId}).exec(function (err, entities) {
+            if (!err) {
+                for (var i = 0; i < entities.length; i++) {
+                    fileModel.findOne({'_id': entities[i].id}).exec(function (err, entity) {
+                        if (entity) {
                             var isFind = false;
-                            for(var j = 0 ; j < entity.acl.length ; j++){
-                                if(entity.acl[j].userId == userId){
+                            for (var j = 0; j < entity.acl.length; j++) {
+                                if (entity.acl[j].userId == userId) {
                                     isFind = true;
                                     entity.acl[j].status = status;
                                     entity.acl[j].changeLog.push({ to: status, changeBy: currentUser});
@@ -469,7 +518,7 @@ function changeAccessRole(currentUser, userId, status, currentEntityId){
                                     break;
                                 }
                             }
-                            if(!isFind){
+                            if (!isFind) {
                                 var accessRole = { userId: userId, status: status};
                                 accessRole.changeLog = [];
                                 accessRole.changeLog.push({ to: status, changeBy: currentUser});
@@ -483,11 +532,12 @@ function changeAccessRole(currentUser, userId, status, currentEntityId){
             }
         });
     }
-    catch(ex){
+    catch (ex) {
         console.log(ex);
         return null;
     }
 }
+
 
 /*------------------------------------------ Routes -------------------------------------*/
 router.route('/download/:fileId').get(userControl.requireAuthentication, downloadFile);

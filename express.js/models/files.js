@@ -24,9 +24,9 @@ var ActionSchema = new mongoose.Schema({
 var FileSchema = new mongoose.Schema({
     contentType : {type:String,enum: ['File', 'Folder']},
     MIMEType: {type: String},
-    readCount: {type: int},
+    readCount: {type: Number},
     entityName: {type: String},
-    entitySize: {type: int},
+    entitySize: {type: Number},
     parent: {type: mongoose.Schema.ObjectId, ref:'Files'},
     owner: {type: mongoose.Schema.ObjectId, ref:'User'},
     access: {type: String, enum: ['Public', 'Private', 'Friends']},

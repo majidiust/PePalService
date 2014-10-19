@@ -8,16 +8,12 @@ var bodyParser = require('body-parser');
 var webSocketServer = require('./websocket/chat-server.js');
 var tcpSocketServer = require('./tcpsocket/chat-server.js');
 
-// Database
-//var mongo = require('mongoskin');
-//var db = mongo.db("mongodb://192.168.88.128:27017/sample3", {native_parser:true});
-
 var mongoose = require('mongoose');
 mongoose.connect('mongodb://192.168.88.128:27017/PePalServiceExpress');
 
 var users = require('./routes/users');
 var chatRest = require('./routes/chat');
-
+var files = require('./routes/files');
 var app = express();
 
 // view engine setup
@@ -46,7 +42,7 @@ app.use(function (req, res, next) {
 
 app.use('/api', users);
 app.use('/chat', chatRest);
-
+app.use('/document', files);
 /// catch 404 and forward to error handler
 app.use(function(req, res, next) {
     var err = new Error('Not Found');

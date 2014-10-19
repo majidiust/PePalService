@@ -27,6 +27,7 @@
         "webworker-threads": "*",
         "sleep": "*",
         "timer": "*",
-        "blueimp-file-upload-expressjs": "*"
+        "blueimp-file-upload-expressjs": "*",
+        "mime": "*"
     }
 }
