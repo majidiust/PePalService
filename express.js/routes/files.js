@@ -9,7 +9,8 @@ var path = require('path');
 var mime = require('mime');
 
 /*----------------------------------- Uploader module ------------------------*/
-var options = {
+var options;
+options = {
     tmpDir: __dirname + '/../public/uploaded/tmp',
     uploadDir: __dirname + '/../public/uploaded/files',
     uploadUrl: '/uploaded/files/',
@@ -85,38 +86,65 @@ function downloadFile(req, res) {
 }
 
 function getChilds(req, res) {
+    console.log("get childs");
     try {
         var entityId = req.params.entityId;
+        console.log(entityId);
         if (!entityId) {
-            res.send('{parameters:"[entityId]"}', 400);
+            fileModel.find({ parent: null}).exec(function (err, files) {
+                try {
+                    var result = [];
+                    for (var i = 0; i < files.length; i++) {
+                        if (files[i].owner == req.user.id)
+                            result.push(files[i]);
+                        else {
+                            for (var j = 0; j < files[i].acl.length; j++) {
+                                if (files[i].acl[j].userId == req.user.id)
+                                    result.push(files[i]);
+                            }
+                        }
+                    }
+                    res.json(result);
+                }
+                catch (ex) {
+                    console.log(ex);
+                    res.send(ex, 500)
+                }
+            });
         }
         else {
             fileModel.findOne({'_id': entityId}).exec(function (err, fileInstance) {
                 if (err) {
+                    console.log(err);
                     res.send(err, 500);
                 }
                 else if (!fileInstance) {
                     res.send("entity not found", 404);
                 }
                 else {
-                    if (fileInstance.contentType != "Folder") {
-                        res.send("entity not found", 404);
+                    if (fileInstance.contentType.indexOf("Folder") == -1) {
+                        res.send("This is a file and no have any child", 404);
                     }
                     else {
                         var hasAccess = false;
-                        for (var i = 0; i < fileInstance.acl.length; i++) {
-                            if (fileInstance.acl[i].userId == req.user.id) {
-                                if (fileInstance.acl[i].status == true) {
-                                    hasAccess = true;
+                        if (fileInstance.owner != req.user.id) {
+                            for (var i = 0; i < fileInstance.acl.length; i++) {
+                                if (fileInstance.acl[i].userId == req.user.id) {
+                                    if (fileInstance.acl[i].status == true) {
+                                        hasAccess = true;
+                                    }
+                                    break;
                                 }
-                                break;
                             }
+                        }
+                        else {
+                            hasAccess = true;
                         }
                         if (!hasAccess) {
                             res.send("Not allowed", 403);
                         }
                         else {
-                            fileModel.find({'parent': entityId}).exec(function (err, fileInstances) {
+                            fileModel.find({parent: entityId}).exec(function (err, fileInstances) {
                                 if (err) {
                                     res.send(err, 500);
                                 }
@@ -129,6 +157,36 @@ function getChilds(req, res) {
                 }
             });
         }
+    }
+    catch (ex) {
+        console.log(ex);
+        res.send(ex, 500);
+    }
+}
+
+function getRootEntities(req, res) {
+    console.log("get roots");
+    try {
+        fileModel.find({ parent: null}).exec(function (err, files) {
+            try {
+                var result = [];
+                for (var i = 0; i < files.length; i++) {
+                    if (files[i].owner == req.user.id)
+                        result.push(files[i]);
+                    else {
+                        for (var j = 0; j < files[i].acl.length; j++) {
+                            if (files[i].acl[j].userId == req.user.id)
+                                result.push(files[i]);
+                        }
+                    }
+                }
+                res.json(result);
+            }
+            catch (ex) {
+                console.log(ex);
+                res.send(ex, 500)
+            }
+        });
     }
     catch (ex) {
         console.log(ex);
@@ -151,7 +209,7 @@ function getParentId(req, res) {
                     res.send("entity not found", 404);
                 }
                 else {
-                    res.json(fileInstance.parent);
+                    res.json({ parentId: fileInstance.parent});
                 }
             });
         }
@@ -177,7 +235,7 @@ function getAccessType(req, res) {
                     res.send("entity not found", 404);
                 }
                 else {
-                    res.json(fileInstance.accept);
+                    res.json({access: fileInstance.access });
                 }
             });
         }
@@ -190,9 +248,9 @@ function getAccessType(req, res) {
 
 function createDirectory(req, res) {
     try {
-        var dirName = req.body.fileName;
+        var dirName = req.body.dirName;
         var access = req.body.access;
-        var parentId = req.body.parent;
+        var parentId = req.body.parentId;
         if (!dirName) {
             res.send('{parameters:"[dirName]"}', 400);
         }
@@ -209,8 +267,9 @@ function createDirectory(req, res) {
                 status: true
             });
             newEntity.actionLog.push({userId: req.user.id, action: 'Create'});
-            if (parentId) {
+            if (!parentId) {
                 newEntity.save(null);
+                res.send("Added successfully", 201);
             }
             else {
                 fileModel.findOne({'_id': parentId}).exec(function (err, folder) {
@@ -218,7 +277,7 @@ function createDirectory(req, res) {
                         res.send(err, 500);
                     }
                     else if (!folder) {
-                        res.send("entity not found", 404);
+                        res.send("Parent entity not found", 404);
                     }
                     else if (folder.contentType.indexOf("Folder") != -1) {
                         newEntity.parent = parentId;
@@ -240,7 +299,7 @@ function createDirectory(req, res) {
 
 function moveEntity(req, res) {
     try {
-        var entityId = req.body.entityyId;
+        var entityId = req.body.entityId;
         var newParentId = req.body.newParentId;
         if (!entityId) {
             res.send('{parameters:"[entityId]"}', 400);
@@ -272,10 +331,10 @@ function moveEntity(req, res) {
                                 fileInstance.parent = newParentId;
                                 fileInstance.actionLog.push({userId: req.user.id, action: 'Move'});
                                 fileInstance.save(null);
+                                res.send("entity moved", 200);
                             }
                         });
                     }
-                    res.json(fileInstance.accept);
                 }
             });
         }
@@ -498,7 +557,6 @@ function uploadFile(req, res) {
     }
 }
 
-
 /* ------------------------------------------- Utility functions ------------------------------------------*/
 
 function changeAccessRole(currentUser, userId, status, currentEntityId) {
@@ -538,19 +596,33 @@ function changeAccessRole(currentUser, userId, status, currentEntityId) {
     }
 }
 
-
 /*------------------------------------------ Routes -------------------------------------*/
 router.route('/download/:fileId').get(userControl.requireAuthentication, downloadFile);
-router.route('/getChilds/:entityId').get(userControl.requireAuthentication, getChilds);
+router.route('/download').get(userControl.requireAuthentication, downloadFile);
+
+router.route('/getListOfEntity/:entityId').get(userControl.requireAuthentication, getChilds);
+router.route('/getListOfEntity').get(userControl.requireAuthentication, getRootEntities);
+
 router.route('/getParentId/:entityId').get(userControl.requireAuthentication, getParentId);
+router.route('/getParentId').get(userControl.requireAuthentication, getParentId);
+
 router.route('/getAccessType/:entityId').get(userControl.requireAuthentication, getAccessType);
+router.route('/getAccessType').get(userControl.requireAuthentication, getAccessType);
 
 router.route('/uploadFile').post(userControl.requireAuthentication, uploadFile);
+
 router.route('/createDirectory').post(userControl.requireAuthentication, createDirectory);
+
 router.route('/addAccessRole').post(userControl.requireAuthentication, addAccessRole);
+
 router.route('/removeAccessRole').post(userControl.requireAuthentication, removeAccessRole);
+
 router.route('/changeAccessType').post(userControl.requireAuthentication, changeAccess);
+
 router.route('/deleteEntity').post(userControl.requireAuthentication, deleteEntity);
+
 router.route('/moveEntity').post(userControl.requireAuthentication, moveEntity);
+
+
 /*------------------------------------------ Register Module ----------------------------*/
 module.exports = router;
