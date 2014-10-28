@@ -7,7 +7,7 @@ var moment = require('moment')
 var datejs = require('safe_datejs');
 var path = require('path');
 var mime = require('mime');
-
+var fs = require('fs');
 /*----------------------------------- Uploader module ------------------------*/
 var options;
 options = {
@@ -53,12 +53,16 @@ function downloadFile(req, res) {
                 }
                 else {
                     var hasAccess = false;
-                    for (var i = 0; i < fileInstance.acl.length; i++) {
-                        if (fileInstance.acl[i].userId == req.user.id) {
-                            if (fileInstance.acl[i].status == true) {
-                                hasAccess = true;
+                    if(fileInstance.owner == req.user.id)
+                        hasAccess = true;
+                    else {
+                        for (var i = 0; i < fileInstance.acl.length; i++) {
+                            if (fileInstance.acl[i].userId == req.user.id) {
+                                if (fileInstance.acl[i].status == true) {
+                                    hasAccess = true;
+                                }
+                                break;
                             }
-                            break;
                         }
                     }
                     if (!hasAccess) {
@@ -67,13 +71,23 @@ function downloadFile(req, res) {
                     else {
                         fileInstance.readCount += 1;
                         fileInstance.save(null);
-                        var file = fileInstance.physicalPath;
+                        var file = 'public/' + fileInstance.physicalPath;
+                        console.log(file);
                         var filename = path.basename(file);
+                        console.log(filename);
                         var mimetype = mime.lookup(file);
                         res.setHeader('Content-disposition', 'attachment; filename=' + filename);
                         res.setHeader('Content-type', mimetype);
-                        var fstream = fs.createReadStream(file);
-                        fstream.pipe(res);
+                       // var fstream = fs.createReadStream(file);
+
+                        res.download(file, filename, function(err){
+                            if(err){
+                                console.log(err);
+                            }
+                            else{
+                                console.log("download ok");
+                            }
+                        });
                     }
                 }
             });
@@ -363,7 +377,7 @@ function deleteEntity(req, res) {
                     fileInstance.status = false;
                     fileInstance.actionLog.push({userId: req.user.id, action: 'Delete'});
                     fileInstance.save(null);
-                    res.json(fileInstance.accept);
+                    res.json({message: "Entity removed"});
                 }
             });
         }
@@ -511,13 +525,14 @@ function removeAccessRole(req, res) {
 
 function uploadFile(req, res) {
     try {
-        var parentId = req.body.parentId;
-        var access = req.body.access;
-        if (access != "Public" || access != "Private" || access != "Friends" || !access) {
+        var parentId = req.params.parentId;
+        var access = req.params.access;
+        console.log(parentId + " : " + access);
+        if (!access) {
             res.send('{parameters:"[access]"}', 400);
         }
         else if (!parentId) {
-            res.send('{parameters:"[access]"}', 400);
+            res.send('{parameters:"[parentId]"}', 400);
         }
         else {
             fileModel.findOne({'_id': parentId}).exec(function (err, entity) {
@@ -526,6 +541,9 @@ function uploadFile(req, res) {
                 }
                 else if (!entity) {
                     res.send("file not found", 404);
+                }
+                else if(entity.contentType.indexOf("File") != -1){
+                    res.send("cannot upload a file as the child of another file", 403);
                 }
                 else {
                     uploader.post(req, res, function (obj) {
@@ -558,6 +576,43 @@ function uploadFile(req, res) {
 }
 
 /* ------------------------------------------- Utility functions ------------------------------------------*/
+function exhaustiveDelete(currentUser, userId, status, currentEntityId) {
+    try {
+        fileModel.findOne({'_id': currentEntityId}).exec(function (err, currentInstance) {
+                if (!err) {
+                    if (currentInstance) {
+                        currentInstance.status = false;
+                        currentInstance.save(null);
+                        if(currentInstance.contentType.indexOf("Folder") != -1) {
+                            fileModel.find({parent: currentEntityId}).exec(function (err, entities) {
+                                if (!err) {
+                                    for (var i = 0; i < entities.length; i++) {
+                                        fileModel.findOne({'_id': entities[i].id}).exec(function (err, entity) {
+                                            exhaustiveDelete(currentUser, userId, status, entity.id);
+                                        });
+                                    }
+                                }
+                                else {
+                                    console.log(err);
+                                    return null;
+                                }
+                            });
+                        }
+                    }
+                    else {
+                        console.log("Instance is invalid with id : " + currentEntityId);
+                        return null;
+                    }
+                }
+            }
+        );
+    }
+    catch
+        (ex) {
+        console.log(ex);
+        return null;
+    }
+}
 
 function changeAccessRole(currentUser, userId, status, currentEntityId) {
     try {
@@ -597,6 +652,7 @@ function changeAccessRole(currentUser, userId, status, currentEntityId) {
 }
 
 /*------------------------------------------ Routes -------------------------------------*/
+
 router.route('/download/:fileId').get(userControl.requireAuthentication, downloadFile);
 router.route('/download').get(userControl.requireAuthentication, downloadFile);
 
@@ -609,7 +665,7 @@ router.route('/getParentId').get(userControl.requireAuthentication, getParentId)
 router.route('/getAccessType/:entityId').get(userControl.requireAuthentication, getAccessType);
 router.route('/getAccessType').get(userControl.requireAuthentication, getAccessType);
 
-router.route('/uploadFile').post(userControl.requireAuthentication, uploadFile);
+router.route('/uploadFile/:parentId/:access').post(userControl.requireAuthentication, uploadFile);
 
 router.route('/createDirectory').post(userControl.requireAuthentication, createDirectory);
 
@@ -622,7 +678,6 @@ router.route('/changeAccessType').post(userControl.requireAuthentication, change
 router.route('/deleteEntity').post(userControl.requireAuthentication, deleteEntity);
 
 router.route('/moveEntity').post(userControl.requireAuthentication, moveEntity);
-
 
 /*------------------------------------------ Register Module ----------------------------*/
 module.exports = router;
