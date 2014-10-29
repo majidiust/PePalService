@@ -9,6 +9,7 @@ var datejs = require('safe_datejs');
 var EntityModel = require('../models/chat').EntityModel;
 var RoomModel = require('../models/chat').RoomModel;
 var ErrorCodes = require('../libs/error-codes').AuthResultCode;
+var log = require('../log/log');
 var SuccessCodes = require('../libs/success-codes').SuccessCode;
 var CommandList = require('../libs/cmd-list').WebsocketCommandList;
 var router = express.Router();
@@ -23,15 +24,18 @@ function createParametrizedResultTextData(message, code, paramName, paramValue) 
 }
 function hasUserRelationToOther(me, other, exist, notExist) {
     try {
-        console.log("check is two user make chat before ? ");
+        //console.log("check is two user make chat before ? ");
+        log.info("check is two user make chat before ? ");
         UserModel.findOne({'_id': me.id}).populate('individuals').exec(function (err, user) {
-            console.log(user);
+            //console.log(user);
+            log.info(user);
             var e = false;
             var roomid;
             for (var i = 0; i < user.individuals.length; i++) {
                 for (var j = 0; j < user.individuals[i].Members.length; j++) {
                     if (user.individuals[i].Members[j] == other) {
-                        console.log('room id is : ' + user.individuals[i].id);
+                        //console.log('room id is : ' + user.individuals[i].id);
+                        log.info('room id is : ' + user.individuals[i].id);
                         roomid = user.individuals[i].id;
                         e = true;
                         break;
@@ -50,7 +54,8 @@ function hasUserRelationToOther(me, other, exist, notExist) {
         });
     }
     catch (ex) {
-        console.log(ex);
+        //console.log(ex);
+        log.error(ex);
     }
 };
 function createResultTextData(message, code) {
@@ -88,14 +93,18 @@ var createIndividualRoom = function (req, res) {
                         req.user.save(null);
                         UserModel.findOne({ '_id': req.body.otherParty }, function (err, remote) {
                             if (err) {
-                                console.log('Could not find remote party');
+                                //console.log('Could not find remote party');
+                                log.warn('Could not find remote party')
                             }
                             else if (!remote) {
-                                console.log('Could not find remote party');
+                                //console.log('Could not find remote party');
+                                log.warn('Could not find remote party');
                             }
                             else {
-                                console.log("room added to remote party successfully");
-                                console.log(remote);
+                                //console.log("room added to remote party successfully");
+                                log.info("room added to remote party successfully")
+                                //console.log(remote);
+                                log.info(remote);
                                 remote.individuals.push(newRoom.id);
                                 remote.save(null);
                                 res.json(createParametrizedResultTextData(SuccessCodes.CreateRoomSuccessfully.Message, SuccessCodes.CreateRoomSuccessfully.code, 'roomId', newRoom.id));
@@ -109,7 +118,8 @@ var createIndividualRoom = function (req, res) {
         }
     }
     catch (ex) {
-        console.log(ex);
+        //console.log(ex);
+        log.error(ex);
     }
 };
 function sendTextMessageTo(req, res) {
@@ -142,11 +152,13 @@ function sendTextMessageTo(req, res) {
         .populate('Members')
         .exec(function (err, room) {
             if (err) {
-                console.log('error in publish event to room members : ' + err);
+                //console.log('error in publish event to room members : ' + err);
+                log.error('error in publish event to room members : ' + err);
                 res.json(createResultTextData(ErrorCodes.PushEventToRoomError.Message, ErrorCodes.PushEventToRoomError.code));
             }
             else if (!room) {
-                console.log('specific room not found');
+                //console.log('specific room not found');
+                log.error('specific room not found');
                 res.json(createResultTextData(ErrorCodes.RoomDoesNotExist.Message, ErrorCodes.RoomDoesNotExist.code));
             }
             else {
@@ -165,22 +177,27 @@ function sendTextMessageTo(req, res) {
                 });
                 event.save(function (err) {
                     if (err) {
-                        console.log('error in inserting event in document ' + err);
+                        //console.log('error in inserting event in document ' + err);
+                        log.error('error in inserting event in document ' + err);
                         res.json(createResultTextData(ErrorCodes.PushEventToRoomError.Message, ErrorCodes.PushEventToRoomError.code));
                     }
                     else {
-                        console.log("Event save successfully");
+                        //console.log("Event save successfully");
+                        log.info("Event save successfully");
                         room.Entities.push(event.id);
                         for (var i = 0; i < room.Members.length; i++) {
                             var user = room.Members[i];
-                            console.log(user);
+                            //console.log(user);
+                            log.info(user);
                             user.nonDeliveredEvents.push(event.id);
                             user.save(function (err) {
                                 if (err) {
-                                    console.log('error in inserting event to user event queue');
+                                    //console.log('error in inserting event to user event queue');
+                                    log.error('error in inserting event to user event queue');
                                     res.json(createResultTextData(ErrorCodes.PushEventToUSerError.Message, ErrorCodes.PushEventToUSerError.code));
                                 } else {
-                                    console.log('event ublished successfully');
+                                    //console.log('event ublished successfully');
+                                    log.info('event ublished successfully');
                                     res.json(createResultTextData(SuccessCodes.EventPostedSuccessfully.Message, SuccessCodes.EventPostedSuccessfully.code));
                                 }
                             });

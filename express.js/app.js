@@ -5,10 +5,11 @@ var favicon = require('static-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+var log = require('./log/log.js');
 var webSocketServer = require('./websocket/chat-server.js');
 var tcpSocketServer = require('./tcpsocket/chat-server.js');
 var mongoose = require('mongoose');
-mongoose.connect('mongodb://192.168.88.128:27017/PePalServiceExpress');
+mongoose.connect('mongodb://127.0.0.1:27017/PePalServiceExpress');
 
 var users = require('./routes/users');
 var chatRest = require('./routes/chat');
@@ -28,6 +29,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(passport.initialize());
 
 
+
 /**
  * Set the secret for encoding/decoding JWT tokens
  */
@@ -35,7 +37,8 @@ app.set('jwtTokenSecret', '729183456258456')
 
 // Make our db accessible to our router
 app.use(function (req, res, next) {
-    console.log("Middle layer");
+    log.info('Middle layer');
+    //console.log("Middle layer");
     next();
 });
 
@@ -50,6 +53,7 @@ app.use(function(req, res, next) {
 });
 
 /// error handlers
+
 
 // development error handler
 // will print stacktrace
