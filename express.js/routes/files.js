@@ -74,10 +74,8 @@ function downloadFile(req, res) {
                         fileInstance.readCount += 1;
                         fileInstance.save(null);
                         var file = 'public/' + fileInstance.physicalPath;
-                        //console.log(file);
                         log.log('file', file);
                         var filename = path.basename(file);
-                        //console.log(filename);
                         log.log('file', filename);
                         var mimetype = mime.lookup(file);
                         res.setHeader('Content-disposition', 'attachment; filename=' + filename);
@@ -86,11 +84,9 @@ function downloadFile(req, res) {
 
                         res.download(file, filename, function(err){
                             if(err){
-                                //console.log(err);
                                 log.error(err);
                             }
                             else{
-                                //console.log("download ok");
                                 log.info('download on');
                             }
                         });
@@ -100,19 +96,16 @@ function downloadFile(req, res) {
         }
     }
     catch (ex) {
-        //console.log(ex);
         log.error(ex);
         res.send(ex, 500);
     }
 }
 
 function getChilds(req, res) {
-    //console.log("get childs");
     log.info('get childs');
 
     try {
         var entityId = req.params.entityId;
-        //console.log(entityId);
         log.info(entityId);
         if (!entityId) {
             fileModel.find({ parent: null}).exec(function (err, files) {
@@ -131,7 +124,6 @@ function getChilds(req, res) {
                     res.json(result);
                 }
                 catch (ex) {
-                    //console.log(ex);
                     log.error(ex);
                     res.send(ex, 500)
                 }
@@ -140,7 +132,6 @@ function getChilds(req, res) {
         else {
             fileModel.findOne({'_id': entityId}).exec(function (err, fileInstance) {
                 if (err) {
-                    //console.log(err);
                     log.error(err);
                     res.send(err, 500);
                 }
@@ -185,14 +176,12 @@ function getChilds(req, res) {
         }
     }
     catch (ex) {
-        //console.log(ex);
         log.error(ex);
         res.send(ex, 500);
     }
 }
 
 function getRootEntities(req, res) {
-    //console.log("get roots");
     log.info('get roots');
     try {
         fileModel.find({ parent: null}).exec(function (err, files) {
@@ -211,14 +200,12 @@ function getRootEntities(req, res) {
                 res.json(result);
             }
             catch (ex) {
-                //console.log(ex);
                 log.error(ex);
                 res.send(ex, 500)
             }
         });
     }
     catch (ex) {
-        //console.log(ex);
         log.error(ex);
         res.send(ex, 500);
     }
@@ -245,7 +232,6 @@ function getParentId(req, res) {
         }
     }
     catch (ex) {
-        //console.log(ex);
         log.error(ex);
         res.send(ex, 500);
     }
@@ -272,7 +258,6 @@ function getAccessType(req, res) {
         }
     }
     catch (ex) {
-        //console.log(ex);
         log.error(ex);
         res.send(ex, 500);
     }
@@ -324,7 +309,6 @@ function createDirectory(req, res) {
         }
     }
     catch (ex) {
-        //console.log(ex);
         log.error(ex);
         res.send(ex, 500);
     }
@@ -373,7 +357,6 @@ function moveEntity(req, res) {
         }
     }
     catch (ex) {
-        //console.log(ex);
         log.error(ex);
         res.send(ex, 500);
     }
@@ -403,7 +386,6 @@ function deleteEntity(req, res) {
         }
     }
     catch (ex) {
-        //console.log(ex);
         log.error(ex);
         res.send(ex, 500);
     }
@@ -437,7 +419,6 @@ function changeAccess(req, res) {
         }
     }
     catch (ex) {
-        //console.log(ex);
         log.error(ex);
         res.send(ex, 500);
     }
@@ -497,7 +478,6 @@ function addAccessRole(req, res) {
         }
     }
     catch (ex) {
-        //console.log(ex);
         log.error(ex);
         res.send(ex, 500);
     }
@@ -541,7 +521,6 @@ function removeAccessRole(req, res) {
         }
     }
     catch (ex) {
-        //console.log(ex);
         log.error(ex);
         res.send(ex, 500)
     }
@@ -551,7 +530,6 @@ function uploadFile(req, res) {
     try {
         var parentId = req.params.parentId;
         var access = req.params.access;
-        //console.log(parentId + " : " + access);
         log.info(parentId + " : " + access);
         if (!access) {
             res.send('{parameters:"[access]"}', 400);
@@ -595,7 +573,6 @@ function uploadFile(req, res) {
         }
     }
     catch (ex) {
-        //console.log(ex);
         log.error(ex);
         res.send(ex, 500);
     }
@@ -619,7 +596,6 @@ function exhaustiveDelete(currentUser, userId, status, currentEntityId) {
                                     }
                                 }
                                 else {
-                                    //console.log(err);
                                     log.error(err);
                                     return null;
                                 }
@@ -627,7 +603,6 @@ function exhaustiveDelete(currentUser, userId, status, currentEntityId) {
                         }
                     }
                     else {
-                        //console.log("Instance is invalid with id : " + currentEntityId);
                         log.warn("Instance is invalid with id : " + currentEntityId);
                         return null;
                     }
@@ -637,7 +612,6 @@ function exhaustiveDelete(currentUser, userId, status, currentEntityId) {
     }
     catch
         (ex) {
-        //console.log(ex);
         log.error(ex);
         return null;
     }
@@ -675,7 +649,6 @@ function changeAccessRole(currentUser, userId, status, currentEntityId) {
         });
     }
     catch (ex) {
-        //console.log(ex);
         log.error(ex);
         return null;
     }

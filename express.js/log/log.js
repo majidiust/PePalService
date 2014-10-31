@@ -3,7 +3,7 @@ require('winston-mongodb').MongoDB;
 
 
 winston.add(winston.transports.File, {filename: './log/logger.log', exitOnError: false});
-winston.handleExceptions(new winston.transports.File({ filename: './log/exceptions.log' }))
+//winston.handleExceptions(new winston.transports.File({ filename: './log/exceptions.log' }))
 
 winston.add(winston.transports.MongoDB, {
 

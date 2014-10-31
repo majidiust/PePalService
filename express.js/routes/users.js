@@ -37,7 +37,6 @@ var requireAuthentication = function (req, res, next) {
         }
     }
     catch(ex){
-        //console.log(ex);
         log.error(ex);
         res.send(ex, 500);
     }
@@ -50,10 +49,8 @@ function disableOtherAccounts(userId){
         , options = { multi: true };
     tokenModel.update(conditions, update, options, function (err, numAffected) {
         if (err)
-            //console.log(err);
             log.error(ex);
         else {
-            //console.log("Number of updated is : " + numAffected);
             log.info("Number of updated is : " + numAffected);
         }
     });
@@ -82,14 +79,12 @@ function signout(req, res){
                     else {
                         res.send("", 202);
                     }
-                    //console.log("token updated successfully");
                     log.info("token updated successfully");
                 });
             }
         });
     }
     catch(ex){
-        //console.log(ex);
         log.error(ex);
         res.send(ex, 500);
     }
@@ -111,35 +106,29 @@ function signin(req, res){
     if(error == false) {
         userModel.findOne({ username: userName }, function (err, user) {
             if (err) {
-                //console.log(err);
                 log.error(err);
                 res.send("Authentication error: error in fetching data", 500);
             }
             else {
                 if (!user) {
-                    //console.log("user " + userName + " not found");
                     log.error("user " + userName + " not found");
                     res.send("{ message : 'Authentic ation error : user not found'}", 404);
                 }
                 else {
                     user.verifyPassword(password, function (err, isMatch) {
                         if (err) {
-                            //console.log(err);
                             log.error(err);
                             res.send("Authentication error: error in verify password", 500);
                         }
                         else {
                             if (!isMatch) {
-                                //console.log("Authentication error : password is wrong");
                                 log.error("Authentication error : password is wrong");
                                 res.send("Authentication error : password is wrong", 406);
                             }
                             else {
-                                //console.log("disabling other tokens for user  : " + userName);
                                 log.info("disabling other tokens for user  : " + userName);
                                 updateUserActivity("signin", user);
                                 disableOtherAccounts(user.id);
-                                //console.log("alocationg new token for user  : " + userName);
                                 log.info("alocationg new token for user  : " + userName);
                                 var expires = moment().add('days', 7).valueOf();
                                 var token = jwt.encode({
@@ -155,12 +144,10 @@ function signin(req, res){
                                 });
                                 newTokenIns.save(function (err) {
                                     if (err) {
-                                        console.log("Error in saveing token in database : " + err);
                                         log.error("Error in saveing token in database : " + err);
 
                                     }
                                     else {
-                                        console.log("Token saved successfully");
                                         log.info("Token saved successfully");
                                     }
                                 });
@@ -175,13 +162,11 @@ function signin(req, res){
 }
 
 function signup(req, res){
-    //console.log("Signup new user");
     log.info("Signup new user");
     var error =false;
     if(!req.body.phonenumber || !req.body.password || !req.body.email)
     {
         error = true;
-        //console.log("Bad params");
         log.error('Bad params');
         res.send("", 400);
     }
@@ -194,8 +179,7 @@ function signup(req, res){
             isaproved: false,
             islockedout: false
         });
-        //console.log(user);
-        res.info(user);
+        log.info(user);
         user.roles.push({ rolename: 'user' });
         user.activities.push({ activityname: 'signup', activitydate: (new Date()).AsDateJs() });
         user.save(function (err) {
@@ -208,28 +192,23 @@ function signup(req, res){
 }
 
 function updateProfie(req, res){
-    //console.log("update profile");
     log.info('update profile');
     var conditions = { username: req.user.username }
         ,   options = { multi: true };
     var update = Object.create(null);
     for(var field in req.body){
         if (field.toString() != 'username' && field.toString() != 'password') {
-            //console.log(field + ":" + req.body[field]);
             log.info(field + ":" + req.body[field]);
             update[field.toString()] = req.body[field];
         }
     }
-    //console.log(update);
     log.info(update);
     userModel.update(conditions, update, options, function (err, numAffected) {
         if (err) {
-            //console.log(err);
             log.error(err);
             res.send(err, 401);
         }
         else {
-            //console.log("Number of updated is : " + numAffected);
             log.info("Number of updated is : " + numAffected);
             res.send('Profile updated successfully', 201);
         }
@@ -254,7 +233,6 @@ function getUserList(req, res){
 
 function getUser(req, res){
     updateUserActivity("getUser", req.user);
-    //console.log("Get user by email : " + req.params.email);
     log.info("Get user by email : " + req.params.email);
     if(req.params.email){
         userModel.findOne({ email: req.params.email }, function (err, user) {

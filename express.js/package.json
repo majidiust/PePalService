@@ -28,6 +28,8 @@
         "sleep": "*",
         "timer": "*",
         "blueimp-file-upload-expressjs": "*",
-        "mime": "*"
+        "mime": "*",
+        "winston": "*",
+        "winston-mongodb": "*"
     }
 }

@@ -38,7 +38,6 @@ app.set('jwtTokenSecret', '729183456258456')
 // Make our db accessible to our router
 app.use(function (req, res, next) {
     log.info('Middle layer');
-    //console.log("Middle layer");
     next();
 });
 
