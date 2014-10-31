@@ -170,7 +170,7 @@ function createIndividualRoom(client, otherParty) {
                 }
                 else{
                     log.info("room added to remote party successfully");
-                    log.info(remote);
+                    //log.info(remote);
                     remote.individuals.push(newRoom.id);
                     remote.save(null);
                 }

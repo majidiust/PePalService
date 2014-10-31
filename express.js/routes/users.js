@@ -179,7 +179,8 @@ function signup(req, res){
             isaproved: false,
             islockedout: false
         });
-        log.info(user);
+        //log.info("users", {user: user});
+        console.log(user);
         user.roles.push({ rolename: 'user' });
         user.activities.push({ activityname: 'signup', activitydate: (new Date()).AsDateJs() });
         user.save(function (err) {
@@ -202,7 +203,8 @@ function updateProfie(req, res){
             update[field.toString()] = req.body[field];
         }
     }
-    log.info(update);
+    //log.info(update);
+    console.log(update);
     userModel.update(conditions, update, options, function (err, numAffected) {
         if (err) {
             log.error(err);

@@ -96,7 +96,8 @@ var createIndividualRoom = function (req, res) {
                             }
                             else {
                                 log.info("room added to remote party successfully")
-                                log.info(remote);
+                                //log.info(remote);
+                                console.log(remote);
                                 remote.individuals.push(newRoom.id);
                                 remote.save(null);
                                 res.json(createParametrizedResultTextData(SuccessCodes.CreateRoomSuccessfully.Message, SuccessCodes.CreateRoomSuccessfully.code, 'roomId', newRoom.id));
@@ -176,7 +177,8 @@ function sendTextMessageTo(req, res) {
                         room.Entities.push(event.id);
                         for (var i = 0; i < room.Members.length; i++) {
                             var user = room.Members[i];
-                            log.info(user);
+                            //log.info(user);
+                            console.log(user);
                             user.nonDeliveredEvents.push(event.id);
                             user.save(function (err) {
                                 if (err) {
