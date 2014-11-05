@@ -17,11 +17,9 @@ var tcpSocketPort = 5000;
 var clients = [];
 
 var initTCPSocket = function () {
-    //console.log("initTCPSocket on " + tcpSocketPort);
     log.info("initTCPSocket on " + tcpSocketPort);
     server = net.createServer(function (socket) {
         socket.on('connection', function (socket) {
-            //console.log('socket connection...');
             log.info('socket connection...');
             var index = clients.length;
             socket.authResult = ErrorCodes.UnAuthorized;
@@ -30,7 +28,6 @@ var initTCPSocket = function () {
             addBackgroundWorker(clients[index]);
         });
         socket.on('data', function (message) {
-            //console.log('socket message:' + message);
             log.info('socket message:' + message);
             object = JSON.parse(message);
             if (object.token != undefined) {
@@ -38,7 +35,6 @@ var initTCPSocket = function () {
                  *   object json schema : {'token':'.........', 'requestCode':'....', }
                  */
                 try {
-                    //console.log("token is : " + object.token);
                     log.info("token is : " + object.token);
                     socket.token = object.token;
                     isAuthorized(socket,
@@ -52,19 +48,16 @@ var initTCPSocket = function () {
                             clients[socket.id].startWorker();
                         },
                         function () {
-                            //console.log("not authorized");
                             log.info("not authorized");
                             sendAuthorizationRequest(socket);
                             if (clients[socket.id].attempts)
                                 clients[socket.id].attempts += 1;
                             else
                                 clients[socket.id].attempts = 1;
-                            //console.log((new Date()) + 'attempt : ' + clients[socket.id].attempts + 'socket close because ' + socket.authResult.code + ':' + socket.authResult.Message);
                             log.info((new Date()) + 'attempt : ' + clients[socket.id].attempts + 'socket close because ' + socket.authResult.code + ':' + socket.authResult.Message);
                         })
                 }
                 catch (ex) {
-                    //console.log("token exist : " + ex);
                     log.info("token exist : " + ex);
                     sendAuthorizationRequest(socket);
                 }
@@ -97,7 +90,6 @@ var initTCPSocket = function () {
                                         return;
                                     }
                                 }
-                                //console.log("user that wants to send message is : " + clients[socket.id].user.id);
                                 log.info("user that wants to send message is : " + clients[socket.id].user.id);
                                 var event = new EntityModel({
                                     Type: 'Text',
@@ -140,7 +132,6 @@ var initTCPSocket = function () {
             }
         });
         socket.on('error', function (error) {
-            //console.log('error on socket message:' + error);
             log.error('error on socket message:' + error);
         });
     }).listen(tcpSocketPort);
@@ -149,7 +140,6 @@ var initTCPSocket = function () {
 function createIndividualRoom(client, otherParty) {
     try {
         hasUserRelationToOther(client.user, otherParty, function (roomId) {
-            //console.log("Room exist : " + roomId);
             log.info("Room exist : " + roomId);
             client.socket.write(createParametrizedResultTextData(SuccessCodes.RoomExist.Message, SuccessCodes.RoomExist.code, 'roomId', roomId));
             client.socket.end();
@@ -173,18 +163,14 @@ function createIndividualRoom(client, otherParty) {
             client.socket.end();
             UserModel.findOne({ '_id': otherParty }, function(err, remote){
                 if(err){
-                    //console.log('Could not find remote party');
                     log.error('Could not find remote party');
                 }
                 else if(!remote){
-                    //console.log('Could not find remote party');
                     log.error('Could not find remote party');
                 }
                 else{
-                    //console.log("room added to remote party successfully");
                     log.info("room added to remote party successfully");
-                    //console.log(remote);
-                    log.info(remote);
+                    //log.info(remote);
                     remote.individuals.push(newRoom.id);
                     remote.save(null);
                 }
@@ -192,7 +178,6 @@ function createIndividualRoom(client, otherParty) {
         });
     }
     catch (ex) {
-        //console.log(ex);
         log.error(ex);
     }
 }
@@ -203,13 +188,11 @@ function sendEventToRoom(client, event, roomId) {
         .populate('Members')
         .exec(function (err, room) {
             if (err) {
-                //console.log('error in publish event to room members');
                 log.error('error in publish event to room members');
                 client.socket.write(createResultTextData(ErrorCodes.PushEventToRoomError.Message, ErrorCodes.PushEventToRoomError.code));
                 client.socket.end();
             }
             else if (!room) {
-                //console.log('specific room not found');
                 log.error('specific room not found');
                 client.socket.write(createResultTextData(ErrorCodes.RoomDoesNotExist.Message, ErrorCodes.RoomDoesNotExist.code));
                 client.socket.end();
@@ -222,26 +205,24 @@ function sendEventToRoom(client, event, roomId) {
                  */
                 event.save(function (err) {
                     if (err) {
-                        //console.log('error in inserting event in document');
                         log.error('error in inserting event in document');
                         client.socket.write(createResultTextData(ErrorCodes.PushEventToRoomError.Message, ErrorCodes.PushEventToRoomError.code));
                         client.socket.end();
                     }
                     else {
-                        //console.log("Event save successfully");
                         log.error("Event save successfully");
                         room.Entities.push(event.id);
                         for (var i = 0; i < room.Members.length; i++) {
                             var user = room.Members[i];
-                            console.log(user);
+                            log.info(user);
                             user.nonDeliveredEvents.push(event.id);
                             user.save(function (err) {
                                 if (err) {
-                                    console.log('error in inserting event to user event queue');
+                                    log.error('error in inserting event to user event queue');
                                     client.socket.write(createResultTextData(ErrorCodes.PushEventToUSerError.Message, ErrorCodes.PushEventToUSerError.code));
                                     client.socket.end();
                                 } else {
-                                    console.log('event ublished successfully');
+                                    log.info('event ublished successfully');
                                     client.socket.write(createResultTextData(SuccessCodes.EventPostedSuccessfully.Message, SuccessCodes.EventPostedSuccessfully.code));
                                     client.socket.end();
                                 }
@@ -259,7 +240,6 @@ function sendAuthorizationRequest(socket) {
         socket.end();
     }
     catch (ex) {
-        //console.log("sendAuthorizationRequest : " + ex);
         log.error("sendAuthorizationRequest : " + ex);
     }
 }
@@ -310,22 +290,18 @@ function sendEventsToUser(user, socket) {
                         event.Delivered.push(user.id);
                         event.save(function (err) {
                             if (err) {
-                                //console.log('Error in save delivered in events document');
                                 log.error('Error in save delivered in events document');
                             }
                             else {
-                                //console.log('delivered user saved to event document');
                                 log.error('delivered user saved to event document');
                             }
                         });
                         user.nonDeliveredEvents.splice(i, 1);
                         user.save(function (err) {
                             if (err) {
-                                //console.log('Error in save remove event from event list in user document');
                                 log.error('Error in save remove event from event list in user document');
                             }
                             else {
-                                //console.log('save remove event from event list in user document');
                                 log.error('save remove event from event list in user document');
                             }
                         });
@@ -336,7 +312,6 @@ function sendEventsToUser(user, socket) {
         });
     }
     catch (ex) {
-        //console.log(ex);
         log.error(ex);
     }
 }
@@ -365,11 +340,9 @@ function createTextEventMessage(event) {
 function isAuthorized(request, successCallback, errorCallback) {
     if (request.token != undefined) {
         var decoded = jwt.decode(request.token, "729183456258456");
-        //console.log("Token expired in : " + decoded.exp);
         log.info("Token expired in : " + decoded.exp);
         if (decoded.exp <= Date.now()) {
             request.authResult = ErrorCodes.TokenExpired;
-            //console.log("Token has been expired!");
             log.error("Token has been expired!");
             if (errorCallback != null)
                 errorCallback();
@@ -378,7 +351,6 @@ function isAuthorized(request, successCallback, errorCallback) {
             if (!err) {
                 TokenModel.find({ token: request.token, state: true, userId: user.id }, function (err, tokens) {
                     if (tokens.length > 0) {
-                        //console.log("find user token");
                         log.info("find user token");
                         request.user = user;
                         request.authResult = SuccessCodes.AuthorizationIsOk;
@@ -407,17 +379,14 @@ function isAuthorized(request, successCallback, errorCallback) {
 
 function hasUserRelationToOther(me, other, exist, notExist){
     try{
-        //console.log("check is two user make chat before ? ");
         log.info("check is two user make chat before ? ");
         UserModel.findOne({'_id':me.id}).populate('individuals').exec(function (err, user) {
-            //console.log(user);
             log.info(user);
             var e = false;
             var roomid ;
             for(var i = 0 ; i < user.individuals.length ; i++){
                 for(var j = 0 ;  j < user.individuals[i].Members.length ; j++){
                     if(user.individuals[i].Members[j] == other) {
-                        //console.log('room id is : ' + user.individuals[i].id);
                         log.info('room id is : ' + user.individuals[i].id);
                         roomid = user.individuals[i].id;
                         e = true;
@@ -438,7 +407,6 @@ function hasUserRelationToOther(me, other, exist, notExist){
         });
     }
     catch(ex){
-        //console.log(ex);
         log.error(ex);
     }
 };
