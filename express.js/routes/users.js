@@ -4,7 +4,7 @@ var userModel = require("../models/user").UserModel;
 var tokenModel = require("../models/token").TokenModel;
 var authController = require('../controllers/auth');
 var jwt = require('jwt-simple');
-var moment = require('moment')
+var moment = require('moment');
 var datejs = require('safe_datejs');
 
 var requireAuthentication = function (req, res, next) {

@@ -3,7 +3,7 @@ var router = express.Router();
 var userModel = require("../models/user").UserModel;
 var userControl = require("./users");
 var fileModel = require('../models/files').FileModel;
-var moment = require('moment')
+var moment = require('moment');
 var datejs = require('safe_datejs');
 var path = require('path');
 var mime = require('mime');
@@ -502,7 +502,7 @@ function addAccessRole(req, res) {
                                 if (fileInstance.acl[i].userId == user.id) {
                                     isExist = true;
                                     if (fileInstance.acl[i].status != true) {
-                                        fileInstance.acl[i].changeLog.push({to: true, changeBy: req.user.id});
+                                        fileInstance.acl[i].changeLog.push({to: 'Grant', changeBy: req.user.id});
                                     }
                                     fileInstance.acl[i].status = true;
                                     fileInstance.save(null);
@@ -512,7 +512,7 @@ function addAccessRole(req, res) {
                             if (!isExist) {
                                 var accessRole = { userId: accessToUser, status: true};
                                 accessRole.changeLog = [];
-                                accessRole.changeLog.push({ to: true, changeBy: req.user.id});
+                                accessRole.changeLog.push({ to: 'Grant', changeBy: req.user.id});
                                 fileInstance.acl.push(accessRole);
                                 fileInstance.save(null);
                             }
@@ -551,10 +551,10 @@ function removeAccessRole(req, res) {
                 else {
                     var isExist = false;
                     for (var i = 0; i < fileInstance.acl.length; i++) {
-                        if (fileInstance.acl[i].userId == user.id) {
+                        if (fileInstance.acl[i].userId == req.user.id) {
                             isExist = true;
                             if (fileInstance.acl[i].status != false) {
-                                fileInstance.acl[i].changeLog.push({to: false, changeBy: req.user.id});
+                                fileInstance.acl[i].changeLog.push({to: 'Deny', changeBy: req.user.id});
                             }
                             fileInstance.acl[i].status = false;
                             fileInstance.save(null);
@@ -627,15 +627,40 @@ function uploadFile(req, res) {
 
 function getSharedEntities(req, res){
     try{
+        var user = req.user;
+        var result = [];
         fileModel.find().populate('parent').exec(function(err, instances){
+            if (err) {
+                res.send(err, 500);
+            } else {
+                for(var i = 0; i < instances.length; i++){
+                    instances[i].acl.forEach(function(value){
+                        //console.log(value, i);
+                        if (user['_id'] == value['userId'] && instances[i]['access'] != 'Private') {
+                            var isRoot = true;
+                            for(var j = 0; j < instances[i]['parent']['acl'].length; j++){
+                                if (instances[i]['parent']['acl'][j]['userId'] == user.id) {
+                                    isRoot = false;
+                                    break;
+                                }
+                            }
+                            if (isRoot == true) {
 
-            //check if the access has not been granted to the parent
-            //Check if access has been granted to the entity
+                                result.push(instances[i]);
+                            }
+                        }
+                        else {
+                            result.push(instances[i]);
+                        }
+                    });
+                }
+                res.send(result, 200);
+            }
         });
     }
     catch(ex){
         console.log(ex);
-        rwes.send(ex, 500);
+        res.send(ex, 500);
     }
 }
 /* ------------------------------------------- Utility functions ------------------------------------------*/
@@ -742,9 +767,7 @@ router.route('/deleteEntity').post(userControl.requireAuthentication, deleteEnti
 
 router.route('/moveEntity').post(userControl.requireAuthentication, moveEntity);
 
+router.route('/getSharedEntities').get(userControl.requireAuthentication, getSharedEntities);
 
-/*------------------------------------------ Not implemented roots ------------------------------*/
-
-router.route('/getSharedEntities').get(userControl.requireAuthentication, getSharedEntites);
 /*------------------------------------------ Register Module ----------------------------*/
 module.exports = router;

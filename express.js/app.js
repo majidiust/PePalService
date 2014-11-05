@@ -8,7 +8,7 @@ var bodyParser = require('body-parser');
 var webSocketServer = require('./websocket/chat-server.js');
 var tcpSocketServer = require('./tcpsocket/chat-server.js');
 var mongoose = require('mongoose');
-mongoose.connect('mongodb://192.168.88.128:27017/PePalServiceExpress');
+mongoose.connect('mongodb://127.0.0.1:27017/PePalServiceExpress');
 
 var users = require('./routes/users');
 var chatRest = require('./routes/chat');
