@@ -25,3 +25,57 @@
 {"level":"info","message":"Middle layer","timestamp":"2014-10-29T11:47:47.996Z"}
 {"level":"info","message":"Middle layer","timestamp":"2014-10-29T11:48:47.428Z"}
 {"level":"error","message":"Authentication error : password is wrong","timestamp":"2014-10-29T11:48:47.458Z"}
+{"level":"info","message":"Ya just logger worke like a charm","timestamp":"2014-11-05T04:44:51.583Z"}
+{"level":"info","message":"initTCPSocket on 5000","timestamp":"2014-11-05T04:44:54.362Z"}
+{"level":"info","message":"Wed Nov 05 2014 08:14:54 GMT+0330 (IRST) Server is listening on port 1337","timestamp":"2014-11-05T04:44:54.366Z"}
+{"level":"info","message":"Middle layer","timestamp":"2014-11-05T04:45:30.920Z"}
+{"level":"info","message":"Middle layer","timestamp":"2014-11-05T04:45:39.580Z"}
+{"level":"error","message":"","timestamp":"2014-11-05T04:45:39.581Z"}
+{"level":"info","message":"Middle layer","timestamp":"2014-11-05T04:46:54.775Z"}
+{"level":"error","message":"","timestamp":"2014-11-05T04:46:54.777Z"}
+{"level":"info","message":"Middle layer","timestamp":"2014-11-05T04:46:56.151Z"}
+{"level":"error","message":"","timestamp":"2014-11-05T04:46:56.152Z"}
+{"level":"info","message":"Middle layer","timestamp":"2014-11-05T04:47:14.564Z"}
+{"level":"info","message":"Middle layer","timestamp":"2014-11-05T04:47:50.547Z"}
+{"level":"info","message":"disabling other tokens for user  : 02144440444","timestamp":"2014-11-05T04:47:50.592Z"}
+{"level":"info","message":"alocationg new token for user  : 02144440444","timestamp":"2014-11-05T04:47:50.599Z"}
+{"level":"info","message":"Token saved successfully","timestamp":"2014-11-05T04:47:50.643Z"}
+{"level":"info","message":"Number of updated is : 4","timestamp":"2014-11-05T04:47:50.644Z"}
+{"level":"info","message":"Middle layer","timestamp":"2014-11-05T04:49:19.195Z"}
+{"level":"info","message":"Middle layer","timestamp":"2014-11-05T04:49:39.281Z"}
+{"level":"info","message":"Middle layer","timestamp":"2014-11-05T04:49:46.318Z"}
+{"level":"info","message":"get roots","timestamp":"2014-11-05T04:49:46.357Z"}
+{"level":"info","message":"Middle layer","timestamp":"2014-11-05T04:54:19.902Z"}
+{"level":"info","message":"get childs","timestamp":"2014-11-05T04:54:19.911Z"}
+{"level":"info","message":"544cfec77f3325f158f0fc5b","timestamp":"2014-11-05T04:54:19.912Z"}
+{"level":"info","message":"Middle layer","timestamp":"2014-11-05T04:56:24.649Z"}
+{"level":"info","message":"Middle layer","timestamp":"2014-11-05T04:56:59.773Z"}
+{"level":"info","message":"Signup new user","timestamp":"2014-11-05T04:56:59.774Z"}
+{"level":"error","message":"Bad params","timestamp":"2014-11-05T04:56:59.774Z"}
+{"level":"info","message":"Middle layer","timestamp":"2014-11-05T04:58:28.567Z"}
+{"level":"info","message":"Signup new user","timestamp":"2014-11-05T04:58:28.567Z"}
+{"level":"info","message":"Middle layer","timestamp":"2014-11-05T05:00:38.692Z"}
+{"level":"info","message":"Signup new user","timestamp":"2014-11-05T05:00:38.693Z"}
+{"level":"info","message":"Ya just logger worke like a charm","timestamp":"2014-11-05T05:01:38.580Z"}
+{"level":"info","message":"initTCPSocket on 5000","timestamp":"2014-11-05T05:01:38.873Z"}
+{"level":"info","message":"Wed Nov 05 2014 08:31:38 GMT+0330 (IRST) Server is listening on port 1337","timestamp":"2014-11-05T05:01:38.879Z"}
+{"level":"info","message":"Middle layer","timestamp":"2014-11-05T05:01:41.586Z"}
+{"level":"info","message":"Signup new user","timestamp":"2014-11-05T05:01:41.587Z"}
+{"$__":{"strictMode":true,"getters":{},"wasPopulated":false,"activePaths":{"paths":{"email":"modify","salt":"modify","hashedpassword":"modify","username":"modify","registerdate":"default","roles":"default","activities":"default","groups":"default","individuals":"default","nonDeliveredEvents":"default","friends":"default","_id":"default","islockedout":"modify","isaproved":"modify"},"states":{"ignore":{},"default":{"registerdate":true,"roles":true,"activities":true,"groups":true,"individuals":true,"nonDeliveredEvents":true,"friends":true,"_id":true},"init":{},"modify":{"islockedout":true,"isaproved":true,"salt":true,"email":true,"hashedpassword":true,"username":true},"require":{}},"stateNames":["require","modify","init","default","ignore"]}},"isNew":true,"_maxListeners":0,"_events":{"save":[null,null,null],"isNew":[null,null,null]},"_doc":{"registerdate":"1415163701587","roles":[],"activities":[],"groups":[],"individuals":[],"nonDeliveredEvents":[],"friends":[],"_id":{"_bsontype":"ObjectID","id":"TY¯5fØwz\u0012ß\u0017Ê"},"islockedout":false,"isaproved":false,"salt":"1","email":"example@gmail.com","hashedpassword":"123456","username":"09124955"},"_pres":{"save":[null,null,null,null]},"_posts":{"save":[]},"level":"info","message":"","timestamp":"2014-11-05T05:01:41.590Z"}
+{"level":"info","message":"Ya just logger worke like a charm","timestamp":"2014-11-05T05:01:55.717Z"}
+{"level":"info","message":"initTCPSocket on 5000","timestamp":"2014-11-05T05:01:55.960Z"}
+{"level":"info","message":"Wed Nov 05 2014 08:31:55 GMT+0330 (IRST) Server is listening on port 1337","timestamp":"2014-11-05T05:01:55.964Z"}
+{"level":"info","message":"Middle layer","timestamp":"2014-11-05T05:01:58.724Z"}
+{"level":"info","message":"Signup new user","timestamp":"2014-11-05T05:01:58.726Z"}
+{"$__":{"strictMode":true,"getters":{},"wasPopulated":false,"activePaths":{"paths":{"email":"modify","salt":"modify","hashedpassword":"modify","username":"modify","registerdate":"default","roles":"default","activities":"default","groups":"default","individuals":"default","nonDeliveredEvents":"default","friends":"default","_id":"default","islockedout":"modify","isaproved":"modify"},"states":{"ignore":{},"default":{"registerdate":true,"roles":true,"activities":true,"groups":true,"individuals":true,"nonDeliveredEvents":true,"friends":true,"_id":true},"init":{},"modify":{"islockedout":true,"isaproved":true,"salt":true,"email":true,"hashedpassword":true,"username":true},"require":{}},"stateNames":["require","modify","init","default","ignore"]}},"isNew":true,"_maxListeners":0,"_events":{"save":[null,null,null],"isNew":[null,null,null]},"_doc":{"registerdate":"1415163718726","roles":[],"activities":[],"groups":[],"individuals":[],"nonDeliveredEvents":[],"friends":[],"_id":{"_bsontype":"ObjectID","id":"TY¯F0âÁ\u0012f6"},"islockedout":false,"isaproved":false,"salt":"1","email":"example@gmail.com","hashedpassword":"123456","username":"09124955"},"_pres":{"save":[null,null,null,null]},"_posts":{"save":[]},"level":"info","message":"","timestamp":"2014-11-05T05:01:58.730Z"}
+{"level":"info","message":"Ya just logger worke like a charm","timestamp":"2014-11-05T05:08:26.740Z"}
+{"level":"info","message":"initTCPSocket on 5000","timestamp":"2014-11-05T05:08:27.010Z"}
+{"level":"info","message":"Wed Nov 05 2014 08:38:27 GMT+0330 (IRST) Server is listening on port 1337","timestamp":"2014-11-05T05:08:27.014Z"}
+{"level":"info","message":"Middle layer","timestamp":"2014-11-05T05:08:52.900Z"}
+{"level":"info","message":"Signup new user","timestamp":"2014-11-05T05:08:52.902Z"}
+{"level":"info","message":"Ya just logger worke like a charm","timestamp":"2014-11-05T05:10:06.699Z"}
+{"level":"info","message":"initTCPSocket on 5000","timestamp":"2014-11-05T05:10:06.943Z"}
+{"level":"info","message":"Wed Nov 05 2014 08:40:06 GMT+0330 (IRST) Server is listening on port 1337","timestamp":"2014-11-05T05:10:06.946Z"}
+{"level":"info","message":"Middle layer","timestamp":"2014-11-05T05:10:35.167Z"}
+{"level":"info","message":"Signup new user","timestamp":"2014-11-05T05:10:35.167Z"}
+{"level":"info","message":"{\"username\":\"0912432423\",\"hashedpassword\":\"123456\",\"email\":\"example_22@gmail.com\",\"salt\":\"1\",\"isaproved\":false,\"islockedout\":false,\"_id\":\"5459b14b0af1448213aabcc0\",\"friends\":[],\"nonDeliveredEvents\":[],\"individuals\":[],\"groups\":[],\"activities\":[],\"roles\":[],\"registerdate\":\"1415164235168\"}","timestamp":"2014-11-05T05:10:35.170Z"}

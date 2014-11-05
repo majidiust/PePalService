@@ -1,1 +1,5 @@
 express.js/node_modules
+npm-debug.log
+log/logger.js
+log/exceptions.js
+

@@ -195,7 +195,7 @@ function signup(req, res){
             islockedout: false
         });
         //console.log(user);
-        res.info(user);
+        log.info(JSON.stringify(user));
         user.roles.push({ rolename: 'user' });
         user.activities.push({ activityname: 'signup', activitydate: (new Date()).AsDateJs() });
         user.save(function (err) {
