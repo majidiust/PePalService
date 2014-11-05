@@ -53,7 +53,7 @@ function downloadFile(req, res) {
                 }
                 else {
                     var hasAccess = false;
-                    if(fileInstance.owner == req.user.id)
+                    if (fileInstance.owner == req.user.id)
                         hasAccess = true;
                     else {
                         for (var i = 0; i < fileInstance.acl.length; i++) {
@@ -78,16 +78,66 @@ function downloadFile(req, res) {
                         var mimetype = mime.lookup(file);
                         res.setHeader('Content-disposition', 'attachment; filename=' + filename);
                         res.setHeader('Content-type', mimetype);
-                       // var fstream = fs.createReadStream(file);
+                        // var fstream = fs.createReadStream(file);
 
-                        res.download(file, filename, function(err){
-                            if(err){
+                        res.download(file, filename, function (err) {
+                            if (err) {
                                 console.log(err);
                             }
-                            else{
+                            else {
                                 console.log("download ok");
                             }
                         });
+                    }
+                }
+            });
+        }
+    }
+    catch (ex) {
+        console.log(ex);
+        res.send(ex, 500);
+    }
+}
+
+function downloadUrl(req, res) {
+    try {
+        var fileId = req.params.fileId;
+        if (!fileId) {
+            res.send('{parameters:"[fileId]"}', 400);
+        }
+        else {
+            fileModel.findOne({'_id': fileId}).exec(function (err, fileInstance) {
+                if (err) {
+                    res.send(err, 500);
+                }
+                else if (!fileInstance) {
+                    res.send("file not found", 404);
+                }
+                else {
+                    var hasAccess = false;
+                    if (fileInstance.owner == req.user.id)
+                        hasAccess = true;
+                    else {
+                        for (var i = 0; i < fileInstance.acl.length; i++) {
+                            if (fileInstance.acl[i].userId == req.user.id) {
+                                if (fileInstance.acl[i].status == true) {
+                                    hasAccess = true;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    if (!hasAccess) {
+                        res.send("Not allowed", 403);
+                    }
+                    else {
+                        fileInstance.readCount += 1;
+                        fileInstance.save(null);
+                        var file = fileInstance.physicalPath;
+                        console.log(file);
+                        var filename = path.basename(file);
+                        console.log(filename);
+                        res.send({fileUrl: file});
                     }
                 }
             });
@@ -542,7 +592,7 @@ function uploadFile(req, res) {
                 else if (!entity) {
                     res.send("file not found", 404);
                 }
-                else if(entity.contentType.indexOf("File") != -1){
+                else if (entity.contentType.indexOf("File") != -1) {
                     res.send("cannot upload a file as the child of another file", 403);
                 }
                 else {
@@ -575,6 +625,19 @@ function uploadFile(req, res) {
     }
 }
 
+function getSharedEntities(req, res){
+    try{
+        fileModel.find().populate('parent').exec(function(err, instances){
+
+            //check if the access has not been granted to the parent
+            //Check if access has been granted to the entity
+        });
+    }
+    catch(ex){
+        console.log(ex);
+        rwes.send(ex, 500);
+    }
+}
 /* ------------------------------------------- Utility functions ------------------------------------------*/
 function exhaustiveDelete(currentUser, userId, status, currentEntityId) {
     try {
@@ -583,7 +646,7 @@ function exhaustiveDelete(currentUser, userId, status, currentEntityId) {
                     if (currentInstance) {
                         currentInstance.status = false;
                         currentInstance.save(null);
-                        if(currentInstance.contentType.indexOf("Folder") != -1) {
+                        if (currentInstance.contentType.indexOf("Folder") != -1) {
                             fileModel.find({parent: currentEntityId}).exec(function (err, entities) {
                                 if (!err) {
                                     for (var i = 0; i < entities.length; i++) {
@@ -650,11 +713,11 @@ function changeAccessRole(currentUser, userId, status, currentEntityId) {
         return null;
     }
 }
-
 /*------------------------------------------ Routes -------------------------------------*/
-
 router.route('/download/:fileId').get(userControl.requireAuthentication, downloadFile);
 router.route('/download').get(userControl.requireAuthentication, downloadFile);
+
+router.route('/downloadUrl/:fileId').get(userControl.requireAuthentication, downloadUrl);
 
 router.route('/getListOfEntity/:entityId').get(userControl.requireAuthentication, getChilds);
 router.route('/getListOfEntity').get(userControl.requireAuthentication, getRootEntities);
@@ -679,5 +742,9 @@ router.route('/deleteEntity').post(userControl.requireAuthentication, deleteEnti
 
 router.route('/moveEntity').post(userControl.requireAuthentication, moveEntity);
 
+
+/*------------------------------------------ Not implemented roots ------------------------------*/
+
+router.route('/getSharedEntities').get(userControl.requireAuthentication, getSharedEntites);
 /*------------------------------------------ Register Module ----------------------------*/
 module.exports = router;

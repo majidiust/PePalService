@@ -274,7 +274,6 @@ router.route('/signout').post(requireAuthentication, signout);
 router.route('/signin').post(signin);
 router.route('/signup').post(signup);
 router.route('/updateProfile').post(requireAuthentication, updateProfie);
-
 router.route('/getUserByMail/:email').get(requireAuthentication, getUser);
 router.route('/userList').get(requireAuthentication, getUserList);
 router.route('/getCurrentProfile').get(requireAuthentication, getCurrentProfile);

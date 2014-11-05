@@ -24,9 +24,6 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded());
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
-// Use the passport package in our application
-app.use(passport.initialize());
-
 
 /**
  * Set the secret for encoding/decoding JWT tokens
@@ -35,7 +32,9 @@ app.set('jwtTokenSecret', '729183456258456')
 
 // Make our db accessible to our router
 app.use(function (req, res, next) {
-    console.log("Middle layer");
+    console.log("middle logger layer");
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "X-Requested-With, token");
     next();
 });
 
