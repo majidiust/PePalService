@@ -29,3 +29,5 @@ lib-cov
 
 express.js/node_modules
 .idea
+npm-debug.log
+
