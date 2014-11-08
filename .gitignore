@@ -25,6 +25,6 @@ lib-cov
 # Commenting this out is preferred by some people, see
 # https://www.npmjs.org/doc/misc/npm-faq.html#should-i-check-my-node_modules-folder-into-git-
 express.js/node_modules
-express.js/.idea
+.idea
 # Users Environment Variables
 .lock-wscript
