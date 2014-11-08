@@ -24,7 +24,8 @@ lib-cov
 # Dependency directory
 # Commenting this out is preferred by some people, see
 # https://www.npmjs.org/doc/misc/npm-faq.html#should-i-check-my-node_modules-folder-into-git-
-express.js/node_modules
-.idea
 # Users Environment Variables
 .lock-wscript
+
+express.js/node_modules
+.idea
