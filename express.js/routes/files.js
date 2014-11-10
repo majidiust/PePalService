@@ -159,7 +159,7 @@ function getChilds(req, res) {
                 try {
                     var result = [];
                     for (var i = 0; i < files.length; i++) {
-                        if (files[i].owner == req.user.id)
+                        if (files[i].status == true && files[i].owner == req.user.id)
                             result.push(files[i]);
                         else {
                             for (var j = 0; j < files[i].acl.length; j++) {
