@@ -356,6 +356,9 @@ function saveProfile(req, res){
         lastName;
     firstName = req.body.firstName;
     lastName = req.body.lastName;
+    if(!firstName && !lastName){
+        res.send('We need [firstName, lastName] parameters');
+    }
 
     req.user.firstname = firstName;
     req.user.lastname = lastName;
