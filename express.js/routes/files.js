@@ -262,7 +262,7 @@ function getParentId(req, res) {
     try {
         var entityId = req.params.entityId;
         if (!entityId) {
-            res.send('{parameters:"[entityId]"}', 400);
+            res.json({ parentId: ""});
         }
         else {
             fileModel.findOne({'_id': entityId}).exec(function (err, fileInstance) {
@@ -609,6 +609,7 @@ function uploadFile(req, res) {
                             entityName: fileName,
                             MIMEType: mimeType,
                             entitySize: fileSize,
+                            contentType: 'File',
                             physicalPath: 'uploaded/files/' + fileName
                         });
                         newEntity.actionLog.push({userId: req.user.id, action: 'Create'});

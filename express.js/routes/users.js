@@ -6,6 +6,38 @@ var authController = require('../controllers/auth');
 var jwt = require('jwt-simple');
 var moment = require('moment');
 var datejs = require('safe_datejs');
+var fs = require('fs');
+var path = require('path');
+
+/*----------------------------------- Uploader module ------------------------*/
+var options;
+options = {
+    tmpDir: __dirname + '/../public/uploaded/tmp/profiles',
+    uploadDir: __dirname + '/../public/uploaded/profiles',
+    uploadUrl: '/uploaded/profiles/',
+    maxPostSize: 11000000000, // 11 GB
+    minFileSize: 1,
+    maxFileSize: 10000000000, // 10 GB
+    acceptFileTypes: /\.(gif|jpe?g|png)/i,
+    // Files not matched by this regular expression force a download dialog,
+    // to prevent executing any scripts in the context of the service domain:
+    inlineFileTypes: /\.(gif|jpe?g|png)/i,
+    imageTypes: /\.(gif|jpe?g|png)/i,
+    imageVersions: {
+        width: 80,
+        height: 80
+    },
+    accessControl: {
+        allowOrigin: '*',
+        allowMethods: 'OPTIONS, HEAD, GET, POST, PUT, DELETE',
+        allowHeaders: 'Content-Type, Content-Range, Content-Disposition'
+    }
+};
+
+// init the uploader
+var uploader = require('blueimp-file-upload-expressjs')(options);
+/*------------------------------------------ Functions ----------------------------------*/
+
 
 var requireAuthentication = function (req, res, next) {
     try {
@@ -269,6 +301,72 @@ function getUsernameViaUserId(req, res){
     });
 }
 
+function getExtension(filename) {
+    var i = filename.lastIndexOf('.');
+    return (i < 0) ? '' : filename.substr(i);
+}
+
+
+function uploadProfilePic(req, res){
+    var tmpUser = req.user;
+    uploader.post(req, res, function (obj) {
+        console.log(req);
+        var fileName = obj.files[0].name;
+        var extension = getExtension(fileName);
+        fs.rename(options.uploadDir + '/' + fileName, options.uploadDir + '/' +tmpUser.id + '.' +extension, function(err){
+            if(err){
+                res.send(err, 500);
+            }
+            res.send('File pic uploaded', 200);
+        });
+    });
+}
+
+function getUserProfile(req, res){
+    //Pic url profile, username, email, firstName, lastName
+    var result = {};
+    var ext,
+        picFileName = '';
+    var fileName = fs.readdirSync(options.uploadDir);
+    fileName.forEach(function(value){
+        ext = getExtension(value);
+        console.log(value, req.user.id + ext)
+       if(fileName == req.user.id + ext){
+          picFileName = value;
+       } else {
+           picFileName = '';
+       }
+    });
+    if(picFileName != ''){
+        result = {userName: req.user.username, firstName: req.user.firstname, lastName: req.user.lastname,
+            email: req.user.email, picUrl: '/uploaded/profiles/' + picFileName};
+    } else {
+        result = {userName: req.user.username, firstName: req.user.firstname,
+            lastName: req.user.lastname, email: req.user.email, picUrl: null};
+    }
+
+    res.send(result, 200);
+
+
+}
+
+function saveProfile(req, res){
+    // lastName and firstName save user model schema
+    var firstName,
+        lastName;
+    firstName = req.body.firstName;
+    lastName = req.body.lastName;
+
+    req.user.firstname = firstName;
+    req.user.lastname = lastName;
+
+    req.user.save(null);
+
+    res.send('send profile successfully', 200);
+
+}
+
+
 // ----------------------------------------------- Routes
 router.route('/signout').post(requireAuthentication, signout);
 router.route('/signin').post(signin);
@@ -281,6 +379,34 @@ router.route('/getIndividualContacts').get(requireAuthentication, getIndividualC
 router.route('/getGroupContacts').get(requireAuthentication, getGroupContacts);
 router.route('/getUsernameViaUserId/:userId').get(requireAuthentication, getUsernameViaUserId);
 
+//Upload Profile Pic and Save Profile
+router.route('/uploadProfilePic').post(requireAuthentication, uploadProfilePic);
+router.route('/getUserProfile').get(requireAuthentication, getUserProfile);
+router.route('/saveProfile').post(requireAuthentication, saveProfile);
 
 module.exports = router;
 module.exports.requireAuthentication = requireAuthentication;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
