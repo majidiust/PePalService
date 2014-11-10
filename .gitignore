@@ -29,4 +29,4 @@ lib-cov
 
 express.js/node_modules
 .idea
-
+express.js/public/uploaded
