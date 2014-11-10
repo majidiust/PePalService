@@ -313,7 +313,7 @@ function uploadProfilePic(req, res){
         console.log(req);
         var fileName = obj.files[0].name;
         var extension = getExtension(fileName);
-        fs.rename(options.uploadDir + '/' + fileName, options.uploadDir + '/' +tmpUser.id + '.' +extension, function(err){
+        fs.rename(options.uploadDir + '/' + fileName, options.uploadDir + '/' +tmpUser.id + extension, function(err){
             if(err){
                 res.send(err, 500);
             }
