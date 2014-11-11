@@ -350,6 +350,43 @@ function getUserProfile(req, res){
 
 }
 
+function getSpecificUserProfile(req, res){
+    if(!req.params.userId)
+        res.send('{parameters:"[userId]"}', 400);
+    else {
+        userModel.findOne({'_id': req.params.userId}).exec(function(err, user){
+            if(err)
+                res.send(err, 500);
+            else if(!user){
+                res.send("User not found", 403);
+            }
+            else {
+                var result = {};
+                var ext,
+                    picFileName = '';
+                var fileName = fs.readdirSync(options.uploadDir);
+                fileName.forEach(function(value){
+                    ext = getExtension(value);
+                    console.log(value, user.id + ext)
+                    if(fileName == user.id + ext){
+                        picFileName = value;
+                    } else {
+                        picFileName = '';
+                    }
+                });
+                if(picFileName != ''){
+                    result = {userName: user.username, firstName: user.firstname, lastName: user.lastname,
+                        email: user.email, picUrl: '/uploaded/profiles/' + picFileName};
+                } else {
+                    result = {userName: user.username, firstName: user.firstname,
+                        lastName: user.lastname, email: user.email, picUrl: null};
+                }
+                res.send(result, 200);
+            }
+        });
+    }
+}
+
 function saveProfile(req, res){
     // lastName and firstName save user model schema
     var firstName,
@@ -385,6 +422,7 @@ router.route('/getUsernameViaUserId/:userId').get(requireAuthentication, getUser
 //Upload Profile Pic and Save Profile
 router.route('/uploadProfilePic').post(requireAuthentication, uploadProfilePic);
 router.route('/getUserProfile').get(requireAuthentication, getUserProfile);
+router.route('/getUserProfile/:userId').get(requireAuthentication, getSpecificUserProfile);
 router.route('/saveProfile').post(requireAuthentication, saveProfile);
 
 module.exports = router;
