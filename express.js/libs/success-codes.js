@@ -8,7 +8,9 @@ var SuccessCode = {
     CurrentProfile: {code : 6, Message:"CurrentProfile"},
     UsernameViaUserId : {code : 7, Message:"UserName via userId"},
     FriendAddedSuccessfully : {code : 8 , Message: "FriendAddedSuccessfully"},
-    ListOfFriends : {code : 9 , Message : "ListOfFriends"}
+    ListOfFriends : {code : 9 , Message : "ListOfFriends"},
+    ListOfMembers : {code: 10, Message: "List Of Members"},
+    GroupContacts: {code : 11, Message: "Group Contacts"}
 };
 
 module.exports.SuccessCode = SuccessCode;

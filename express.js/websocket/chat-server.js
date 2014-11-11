@@ -149,6 +149,10 @@ var initWebSocket = function () {
                                     clients[connection.id].connection.send(createParametrizedResultTextData(SuccessCodes.IndividualContacts.Message, SuccessCodes.IndividualContacts.code, 'rooms', result));
                                 });
                             }
+                            else if (object.requestCode == MessageType.GetGroupContacts.code){
+                                console.log("get group contacts");
+                                getGroupRooms(clients[connection.id])
+                            }
                             else if (object.requestCode == MessageType.GetCurrentProfile.code) {
                                 var result = clients[connection.id].user.getBrief();
                                 clients[connection.id].connection.send(createParametrizedResultTextData(SuccessCodes.CurrentProfile.Message, SuccessCodes.CurrentProfile.code, 'profile', result));
@@ -165,6 +169,33 @@ var initWebSocket = function () {
                             }
                             else if (object.requestCode == MessageType.GetFriendList.code) {
                                 clients[connection.id].connection.send(createParametrizedResultTextData(SuccessCodes.ListOfFriends.Message, SuccessCodes.ListOfFriends.code, 'friends', clients[connection.id].user.friends));
+                            }
+                            else if (object.requestCode == MessageType.CreateGroupRoom.code){
+                                if(object.roomName){
+                                    createGroupRoom(clients[connection.id], object.roomName);
+                                }
+                                else{
+                                    connection.send(createResultTextData(ErrorCodes.MissingRoomName.code, ErrorCodes.MissingRoomName.Message));
+                                }
+                            }
+                            else if (object.requestCode == MessageType.AddMemberToGroup.code){
+                                if(!object.roomId){
+                                    connection.send(createResultTextData(ErrorCodes.MissingRoomId.code, ErrorCodes.MissingRoomId.Message));
+                                }
+                                else if(!object.memberId){
+                                    connection.send(createResultTextData(ErrorCodes.MissingUserId.code, ErrorCodes.MissingUserId.Message));
+                                }
+                                else{
+                                    addMemberToRoom(clients[connection.id], object.roomId, object.memberId);
+                                }
+                            }
+                            else if (object.requestCode == MessageType.GetGroupMembers.code){
+                                if(!object.roomId){
+                                    connection.send(createResultTextData(ErrorCodes.MissingRoomId.code, ErrorCodes.MissingRoomId.Message));
+                                }
+                                else{
+                                    getRoomMembers(clients[connection.id], object.roomId);
+                                }
                             }
                             else if (object.requestCode == MessageType.AddUserToFriend.code) {
                                 if (object.username) {
@@ -239,6 +270,15 @@ function createParametrizedResultTextData(message, code, paramName, paramValue) 
     return JSON.stringify(result);
 }
 
+function createParametrizedResultTextData2(message, code, paramName, paramValue, paramName2, paramValue2) {
+    var result = {
+        message: message,
+        code: code
+    };
+    result[paramName] = paramValue;
+    result[paramName2] = paramValue2;
+    return JSON.stringify(result);
+}
 
 //OtherParty : id of other user
 function createIndividualRoom(client, otherParty) {
@@ -282,6 +322,94 @@ function createIndividualRoom(client, otherParty) {
     catch (ex) {
         console.log(ex);
     }
+}
+
+function createGroupRoom(client, roomName){
+    var newRoom = new RoomModel(
+        {
+            Type: 'G',
+            StartType: 'Now',
+            Creator: client.user.id
+        }
+    );
+    newRoom.Admins.push(client.user.id);
+    newRoom.Members.push(client.user.id);
+    newRoom.save(null);
+    newRoom.name = roomName;
+    client.user.groups.push(newRoom.id);
+    client.user.save(null);
+    client.connection.send(createParametrizedResultTextData(SuccessCodes.CreateRoomSuccessfully.Message, SuccessCodes.CreateRoomSuccessfully.code, 'roomId', newRoom.id));
+}
+
+function getRoomMembers(client, roomId){
+    RoomModel.findOne({'_id': roomId}).populate('Members').exec(function(err, room){
+        if(err){
+            console.log('error in publish event to room members');
+            client.connection.send(createResultTextData(ErrorCodes.PushEventToRoomError.Message, ErrorCodes.PushEventToRoomError.code));
+        }
+        if(!room){
+            console.log('specific room not found');
+            client.connection.send(createResultTextData(ErrorCodes.RoomDoesNotExist.Message, ErrorCodes.RoomDoesNotExist.code));
+        }
+        else{
+            var result = [];
+            for(var i = 0 ; i < room.Members.length ; i++){
+                var ins = { memberId : room.Members[i].id,
+                            memberUsername : room.Members[i].username};
+                result.push(ins);
+            }
+            client.connection.send(createParametrizedResultTextData2(SuccessCodes.ListOfMembers.Message, SuccessCodes.ListOfMembers.code, 'members', newRoom.id, 'roomId', room.id));
+        }
+    });
+}
+
+function addMemberToRoom(client, roomId, memberId){
+    RoomModel.findOne({'_id': roomId}).exec(function(err, room){
+        if(err){
+            console.log('error in publish event to room members');
+            client.connection.send(createResultTextData(ErrorCodes.PushEventToRoomError.Message, ErrorCodes.PushEventToRoomError.code));
+        }
+        if(!room){
+            console.log('specific room not found');
+            client.connection.send(createResultTextData(ErrorCodes.RoomDoesNotExist.Message, ErrorCodes.RoomDoesNotExist.code));
+        }
+        else{
+            UserModel.findOne({'_id': memberId}).exec(function(err, member){
+                if(err){
+                    console.log(err);
+                }
+               if(!user){
+                   console.log("not found");
+               }
+               else{
+                   var isExist = false;
+                   for(var i = 0 ; i < room.Members.length ; i++){
+                       if(room.Members[i].id == member.id){
+                           isExist = true;
+                           break;
+                       }
+                   }
+                   if(!isExist){
+                       room.Members.push(member.id);
+                       member.groups.push(room.id);
+                       room.save(null);
+                       member.save(null);
+                       //Todo : announce to online user
+                   }
+               }
+            });
+        }
+    });
+}
+
+function getGroupRooms(client){
+    UserModel.findOne({'_id': clients[connection.id].user.id}).populate("groups").exec(function (err, users) {
+        var result = [];
+        for (var i = 0; i < users.groups.length; i++) {
+            result[i] = users.groups[i];
+        }
+        client.connection.send(createParametrizedResultTextData(SuccessCodes.GroupContacts.Message, SuccessCodes.GroupContacts.code, 'rooms', result));
+    });
 }
 
 function sendEventToRoom(client, event, roomId) {
@@ -358,6 +486,7 @@ function addBackgroundWorker(object) {
  *   check that is token valid and add user and authResult to request
  *   return true if authorized and false other than
  */
+
 function isAuthorized(request, successCallback, errorCallback) {
     if (request.token != undefined) {
         var decoded = jwt.decode(request.token, "729183456258456");

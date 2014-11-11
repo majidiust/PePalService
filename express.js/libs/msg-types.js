@@ -6,7 +6,11 @@ var WebsocketMessageList = {
     GetCurrentProfile: {code: "4", Message: "GetCurrentProfile"},
     GetUsernameViaUserId: {code : "5", Message: "GetUsernameViaUserId"},
     AddUserToFriend: {code: "6", Message: "AddUserToFriend"},
-    GetFriendList: {code: "7", Message: "GetFriendList"}
+    GetFriendList: {code: "7", Message: "GetFriendList"},
+    GetGroupContacts: {code: "8", Message: "GetGroupContacts"},
+    CreateGroupRoom: {code: "9", Message: "CreateGroupRoom"},
+    AddMemberToGroup: {code: "10", Message: "AddMemberToGroup"},
+    GetGroupMembers: {code : "11", Message: "GetGroupMembers"}
 };
 
 module.exports.WebsocketMessageList = WebsocketMessageList;
