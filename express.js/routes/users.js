@@ -310,16 +310,15 @@ function getExtension(filename) {
 function uploadProfilePic(req, res){
     var tmpUser = req.user;
     uploader.post(req, res, function (obj) {
-        console.log(req);
         var fileName = obj.files[0].name;
         var extension = getExtension(fileName);
-        fs.rename(options.uploadDir + '/' + fileName, options.uploadDir + '/' +tmpUser.id + extension, function(err){
-            if(err){
-                res.send(err, 500);
-            }
-            res.send('File pic uploaded', 200);
-        });
+        try{
+            fs.renameSync(options.uploadDir + '/' + fileName, options.uploadDir + '/' +tmpUser.id + extension);
+        } catch(err) {
+           res.send(err, 400);
+        }
     });
+    res.send('File pic uploaded', 200);
 }
 
 function getUserProfile(req, res){
@@ -406,6 +405,24 @@ function saveProfile(req, res){
 
 }
 
+function changeProfilePic(req, res){
+    var ext;
+    var fileName = fs.readdirSync(options.uploadDir);
+
+    fileName.forEach(function(value){
+        ext = getExtension(value);
+        if(req.user.id + ext == value){
+            console.log(value);
+            fs.unlinkSync(path.join(options.uploadDir, req.user.id + ext), function(err){
+                if(err) throw err;
+            });
+            uploadProfilePic(req, res);
+        }
+    });
+    res.send('We do not have a picture of you', 300);
+}
+
+
 
 // ----------------------------------------------- Routes
 router.route('/signout').post(requireAuthentication, signout);
@@ -421,10 +438,10 @@ router.route('/getUsernameViaUserId/:userId').get(requireAuthentication, getUser
 
 //Upload Profile Pic and Save Profile
 router.route('/uploadProfilePic').post(requireAuthentication, uploadProfilePic);
+router.route('/changeProfilePic').post(requireAuthentication, changeProfilePic);
 router.route('/getUserProfile').get(requireAuthentication, getUserProfile);
 router.route('/getUserProfile/:userId').get(requireAuthentication, getSpecificUserProfile);
 router.route('/saveProfile').post(requireAuthentication, saveProfile);
-
 module.exports = router;
 module.exports.requireAuthentication = requireAuthentication;
 
