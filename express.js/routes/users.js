@@ -8,7 +8,9 @@ var moment = require('moment');
 var datejs = require('safe_datejs');
 var fs = require('fs');
 var path = require('path');
-
+var ErrorCodes = require('../libs/error-codes').AuthResultCode;
+var SuccessCodes = require('../libs/success-codes').SuccessCode;
+var CommandList = require('../libs/cmd-list').WebsocketCommandList;
 /*----------------------------------- Uploader module ------------------------*/
 var options;
 options = {
@@ -37,6 +39,49 @@ options = {
 // init the uploader
 var uploader = require('blueimp-file-upload-expressjs')(options);
 /*------------------------------------------ Functions ----------------------------------*/
+function createParametrizedResultTextData(message, code, paramName, paramValue) {
+    var result = {
+        message: message,
+        code: code
+    };
+    result[paramName] = paramValue;
+    return (result);
+}
+function hasUserRelationToOther(me, other, exist, notExist) {
+    try {
+        console.log("check is two user make chat before ? ");
+        UserModel.findOne({'_id': me.id}).populate('individuals').exec(function (err, user) {
+            console.log(user);
+            var e = false;
+            var roomid;
+            for (var i = 0; i < user.individuals.length; i++) {
+                for (var j = 0; j < user.individuals[i].Members.length; j++) {
+                    if (user.individuals[i].Members[j] == other) {
+                        console.log('room id is : ' + user.individuals[i].id);
+                        roomid = user.individuals[i].id;
+                        e = true;
+                        break;
+                    }
+                }
+                if (e == true)
+                    break;
+            }
+            if (e == true) {
+                exist(roomid);
+            }
+            else {
+                notExist();
+            }
+
+        });
+    }
+    catch (ex) {
+        console.log(ex);
+    }
+};
+function createResultTextData(message, code) {
+    return ({ message: message, code: code });
+};
 
 
 var requireAuthentication = function (req, res, next) {
@@ -423,6 +468,50 @@ function changeProfilePic(req, res){
 }
 
 
+function addFriendToTheList(req, res) {
+    try {
+        var username = req.params.username;
+        console.log(username);
+        userModel.findOne({'username': username}, function (err, user) {
+            if (user) {
+                var find = false;
+                for (var i = 0; i < req.user.friends.length; i++) {
+                    if (req.user.friends[i].friendId == user.id) {
+                        res.send(createParametrizedResultTextData(SuccessCodes.FriendAddedSuccessfully.Message, SuccessCodes.FriendAddedSuccessfully.code, 'friend', req.user.friends[i]));
+                        find = true;
+                        break;
+                    }
+                }
+                if (!find) {
+                    var link = { friendId: user.id, beginner: req.user.id, status: false, friendUsername: user.username};
+                    req.user.friends.push(link);
+                    var link2 = { friendId: req.user.id, beginner: req.user.id, status: false, friendUsername: req.user.username};
+                    user.friends.push(link2);
+                    req.user.save(null);
+                    user.save(null);
+                    res.send(createParametrizedResultTextData(SuccessCodes.FriendAddedSuccessfully.Message, SuccessCodes.FriendAddedSuccessfully.code, 'friend', link));
+                }
+            }
+            else {
+                res.send(createResultTextData(ErrorCodes.FriendUsernameDoesnotExist.code, ErrorCodes.FriendUsernameDoesnotExist.Message));
+            }
+        });
+    }
+    catch (ex) {
+        console.log(ex);
+        res.send(ex, 500)
+    }
+}
+
+function getFriendList(req, res){
+    try{
+        res.send(createParametrizedResultTextData(SuccessCodes.ListOfFriends.Message, SuccessCodes.ListOfFriends.code, 'friends', req.user.friends));
+    }
+    catch(ex){
+        console.log(ex);
+        res.send(ex, 500);
+    }
+}
 
 // ----------------------------------------------- Routes
 router.route('/signout').post(requireAuthentication, signout);
@@ -435,6 +524,8 @@ router.route('/getCurrentProfile').get(requireAuthentication, getCurrentProfile)
 router.route('/getIndividualContacts').get(requireAuthentication, getIndividualContacts);
 router.route('/getGroupContacts').get(requireAuthentication, getGroupContacts);
 router.route('/getUsernameViaUserId/:userId').get(requireAuthentication, getUsernameViaUserId);
+router.route('/addFriendToTheList/:username').get(requireAuthentication, addFriendToTheList);
+router.route('/getFriendList').get(requireAuthentication, getFriendList);
 
 //Upload Profile Pic and Save Profile
 router.route('/uploadProfilePic').post(requireAuthentication, uploadProfilePic);
