@@ -199,7 +199,8 @@ function getIncomingMessage(req, res) {
                 date: event.CreateDate,
                 from: event.CreatorUserName,
                 content: event.Content,
-                roomId : event.RoomId
+                roomId : event.RoomId,
+                id: event.id
             };
             var result = {
                 message: CommandList.NewMessage.Message,

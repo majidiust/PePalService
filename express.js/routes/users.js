@@ -419,10 +419,10 @@ function getSpecificUserProfile(req, res){
                     }
                 });
                 if(picFileName != ''){
-                    result = {userName: user.username, firstName: user.firstname, lastName: user.lastname,
+                    result = {id: req.params.userId, userName: user.username, firstName: user.firstname, lastName: user.lastname,
                         email: user.email, picUrl: '/uploaded/profiles/' + picFileName};
                 } else {
-                    result = {userName: user.username, firstName: user.firstname,
+                    result = {id: req.params.userId, userName: user.username, firstName: user.firstname,
                         lastName: user.lastname, email: user.email, picUrl: null};
                 }
                 res.send(result, 200);
@@ -434,15 +434,19 @@ function getSpecificUserProfile(req, res){
 function saveProfile(req, res){
     // lastName and firstName save user model schema
     var firstName,
-        lastName;
+        lastName,
+        email;
     firstName = req.body.firstName;
     lastName = req.body.lastName;
+    email = req.body.email;
     if(!firstName && !lastName){
         res.send('We need [firstName, lastName] parameters', 400);
     }
 
     req.user.firstname = firstName;
     req.user.lastname = lastName;
+    if(email)
+        req.user.email = email;
 
     req.user.save(null);
 
@@ -493,7 +497,7 @@ function addFriendToTheList(req, res) {
                 }
             }
             else {
-                res.send(createResultTextData(ErrorCodes.FriendUsernameDoesnotExist.code, ErrorCodes.FriendUsernameDoesnotExist.Message));
+                res.send(createResultTextData(ErrorCodes.FriendUsernameDoesnotExist.Message,ErrorCodes.FriendUsernameDoesnotExist.code));
             }
         });
     }
