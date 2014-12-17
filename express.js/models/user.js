@@ -14,6 +14,11 @@ var UserRole = new Schema({
     roledesc: String
 });
 
+var Notification = new Schema({
+    notificationType: {type:String, enum :['FriendAdded', 'RoomAdded', 'System', 'Message']},
+    notificationDate: {type: Date}
+});
+
 var UserActivity = new Schema({
     activityname: { type: String, required: true},
     activitydate: Date,
@@ -57,7 +62,8 @@ var User = new Schema({
     nonDeliveredEvents: [
         {type: mongoose.Schema.ObjectId, ref: 'Entity'}
     ],
-    friends: [Friend]
+    friends: [Friend],
+    notifications: [Notification]
 });
 
 

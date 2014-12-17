@@ -8,13 +8,50 @@ var ErrorCodes = require('../libs/error-codes').AuthResultCode;
 var SuccessCodes = require('../libs/success-codes').SuccessCode;
 var MessageType = require('../libs/msg-types').WebsocketMessageList;
 var CommandList = require('../libs/cmd-list').WebsocketCommandList;
+var EventTypeList = require('../libs/event-type').EventTypeList;
+
 var UserModel = require('../models/user').UserModel;
 var http = require('http');
 var jwt = require('jwt-simple');
+var events = require('events');
+var eventEmitter = new events.EventEmitter();
 
 var clients = [];
 var server;
 var wsServer;
+
+
+function announceFriendAdded(invited, inviter){
+    try{
+        for(var i = 0 ; i < clients.length ; i++){
+            if(clients[i].user.id == invited){
+                clients[i].connection.send(createParametrizedResultTextData(CommandList.MemberAdded.Message, CommandList.MemberAdded.code, 'invitedBy', inviter));
+                break;
+            }
+        }
+    }
+    catch(ex){
+        console.log(ex);
+    }
+}
+
+function announceAddedToRoom(inviter, invited, roomId){
+    try{
+        for(var i = 0 ; i < clients.length ; i++){
+            if(clients[i].user.id == invited){
+                clients[i].connection.send(createParametrizedResultTextData(CommandList.MemberAdded.Message, CommandList.MemberAdded.code, 'invitedBy', inviter, 'roomId', roomId));
+                break;
+            }
+        }
+    }
+    catch(ex){
+        console.log(ex);
+    }
+}
+
+eventEmitter.on(EventTypeList.FriendAdded.Message, announceFriendAdded);
+eventEmitter.on(EventTypeList.AddedToRoom.Message, announceAddedToRoom);
+
 
 var initWebSocket = function () {
     server = http.createServer(function (request, response) {
@@ -217,6 +254,7 @@ var initWebSocket = function () {
                                                 clients[connection.id].user.save(null);
                                                 user.save(null);
                                                 clients[connection.id].connection.send(createParametrizedResultTextData(SuccessCodes.FriendAddedSuccessfully.Message, SuccessCodes.FriendAddedSuccessfully.code, 'friend', link));
+                                                eventEmitter.emit(EventTypeList.FriendAdded.Message, clients[connection.id].user.id, user.id);
                                             }
                                         }
                                         else {
@@ -303,6 +341,7 @@ function createIndividualRoom(client, otherParty) {
             client.user.individuals.push(newRoom.id);
             client.user.save(null);
             client.connection.send(createParametrizedResultTextData(SuccessCodes.CreateRoomSuccessfully.Message, SuccessCodes.CreateRoomSuccessfully.code, 'roomId', newRoom.id));
+            eventEmitter.emit(EventTypeList.AddedToRoom.Message, client.user.id, otherParty, newRoom.id);
             UserModel.findOne({ '_id': otherParty }, function (err, remote) {
                 if (err) {
                     console.log('Could not find remote party');
