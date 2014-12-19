@@ -23,26 +23,36 @@ var wsServer;
 
 function announceFriendAdded(invited, inviter){
     console.log("## On announceFriendAdded");
-    try{
+   // try{
         for(var i = 0 ; i < clients.length ; i++){
-            if(clients[i].user.id == invited){
-                clients[i].connection.send(createParametrizedResultTextData(CommandList.MemberAdded.Message, CommandList.MemberAdded.code, 'invitedBy', inviter));
-                break;
+            try {
+                if (clients[i].user.id == invited) {
+                    clients[i].connection.send(createParametrizedResultTextData(CommandList.MemberAdded.Message, CommandList.MemberAdded.code, 'invitedBy', inviter));
+                    break;
+                }
             }
-        }
-    }
-    catch(ex){
-        console.log(ex);
-    }
+                catch(ex){
+                console.log(ex);}
+            }
+
+  ///  }
+  //  catch(ex){
+  //      console.log(ex);
+//    }
 }
 
 function announceAddedToRoom(inviter, invited, roomId){
     console.log("## On announceAddedToRoom");
     try{
         for(var i = 0 ; i < clients.length ; i++){
-            if(clients[i].user.id == invited){
-                clients[i].connection.send(createParametrizedResultTextData(CommandList.AddedToRoom.Message, CommandList.AddedToRoom.code, 'invitedBy', inviter, 'roomId', roomId));
-                break;
+            try {
+                if (clients[i].user.id == invited) {
+                    clients[i].connection.send(createParametrizedResultTextData2(CommandList.AddedToRoom.Message, CommandList.AddedToRoom.code, 'invitedBy', inviter, 'roomId', roomId));
+                    break;
+                }
+            }
+            catch(ex){
+                console.log(ex);
             }
         }
     }
