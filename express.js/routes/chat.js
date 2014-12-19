@@ -11,6 +11,8 @@ var RoomModel = require('../models/chat').RoomModel;
 var ErrorCodes = require('../libs/error-codes').AuthResultCode;
 var SuccessCodes = require('../libs/success-codes').SuccessCode;
 var CommandList = require('../libs/cmd-list').WebsocketCommandList;
+var rtCore = require("../websocket/chat-server");
+
 var router = express.Router();
 //------------------------------------Helpers
 function createParametrizedResultTextData(message, code, paramName, paramValue) {
@@ -98,8 +100,8 @@ var createIndividualRoom = function (req, res) {
                                 console.log(remote);
                                 remote.individuals.push(newRoom.id);
                                 remote.save(null);
+                                rtCore.announceAddedToRoom(req.user.id, req.body.otherParty, newRoom.id);
                                 res.json(createParametrizedResultTextData(SuccessCodes.CreateRoomSuccessfully.Message, SuccessCodes.CreateRoomSuccessfully.code, 'roomId', newRoom.id));
-
                             }
                         })
                     }

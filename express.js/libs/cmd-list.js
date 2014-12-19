@@ -4,7 +4,8 @@ var WebsocketCommandList = {
     InvalidMessage: {code: 102, Message:"message is invalid"},
     NewMessage: {code: 103, Message: "NewMessage"},
     MemberAdded: {code: 104, Message: "NewMember"},
-    AddedToGroup : {code : 105, Message: "AddedToGroup"}
+    AddedToGroup : {code : 105, Message: "AddedToGroup"},
+    AddedToRoom : {code : 106, Message: "AddedToRoom"}
 };
 
 module.exports.WebsocketCommandList = WebsocketCommandList;

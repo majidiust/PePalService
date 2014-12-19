@@ -11,6 +11,8 @@ var path = require('path');
 var ErrorCodes = require('../libs/error-codes').AuthResultCode;
 var SuccessCodes = require('../libs/success-codes').SuccessCode;
 var CommandList = require('../libs/cmd-list').WebsocketCommandList;
+var rtCore = require("../websocket/chat-server");
+
 /*----------------------------------- Uploader module ------------------------*/
 var options;
 options = {
@@ -493,6 +495,7 @@ function addFriendToTheList(req, res) {
                     user.friends.push(link2);
                     req.user.save(null);
                     user.save(null);
+                    rtCode.announceFriendAdded(user.id, req.user.id);
                     res.send(createParametrizedResultTextData(SuccessCodes.FriendAddedSuccessfully.Message, SuccessCodes.FriendAddedSuccessfully.code, 'friend', link));
                 }
             }

@@ -22,6 +22,7 @@ var wsServer;
 
 
 function announceFriendAdded(invited, inviter){
+    console.log("## On announceFriendAdded");
     try{
         for(var i = 0 ; i < clients.length ; i++){
             if(clients[i].user.id == invited){
@@ -36,10 +37,11 @@ function announceFriendAdded(invited, inviter){
 }
 
 function announceAddedToRoom(inviter, invited, roomId){
+    console.log("## On announceAddedToRoom");
     try{
         for(var i = 0 ; i < clients.length ; i++){
             if(clients[i].user.id == invited){
-                clients[i].connection.send(createParametrizedResultTextData(CommandList.MemberAdded.Message, CommandList.MemberAdded.code, 'invitedBy', inviter, 'roomId', roomId));
+                clients[i].connection.send(createParametrizedResultTextData(CommandList.AddedToRoom.Message, CommandList.AddedToRoom.code, 'invitedBy', inviter, 'roomId', roomId));
                 break;
             }
         }
@@ -48,10 +50,6 @@ function announceAddedToRoom(inviter, invited, roomId){
         console.log(ex);
     }
 }
-
-eventEmitter.on(EventTypeList.FriendAdded.Message, announceFriendAdded);
-eventEmitter.on(EventTypeList.AddedToRoom.Message, announceAddedToRoom);
-
 
 var initWebSocket = function () {
     server = http.createServer(function (request, response) {
@@ -254,7 +252,7 @@ var initWebSocket = function () {
                                                 clients[connection.id].user.save(null);
                                                 user.save(null);
                                                 clients[connection.id].connection.send(createParametrizedResultTextData(SuccessCodes.FriendAddedSuccessfully.Message, SuccessCodes.FriendAddedSuccessfully.code, 'friend', link));
-                                                eventEmitter.emit(EventTypeList.FriendAdded.Message, clients[connection.id].user.id, user.id);
+                                                announceFriendAdded(clients[connection.id].user.id, user.id);
                                             }
                                         }
                                         else {
@@ -341,7 +339,7 @@ function createIndividualRoom(client, otherParty) {
             client.user.individuals.push(newRoom.id);
             client.user.save(null);
             client.connection.send(createParametrizedResultTextData(SuccessCodes.CreateRoomSuccessfully.Message, SuccessCodes.CreateRoomSuccessfully.code, 'roomId', newRoom.id));
-            eventEmitter.emit(EventTypeList.AddedToRoom.Message, client.user.id, otherParty, newRoom.id);
+            announceAddedToRoom(client.user.id, otherParty, newRoom.id);
             UserModel.findOne({ '_id': otherParty }, function (err, remote) {
                 if (err) {
                     console.log('Could not find remote party');
@@ -667,4 +665,6 @@ function hasUserRelationToOther(me, other, exist, notExist) {
 };
 
 
+module.exports.announceFriendAdded = announceFriendAdded;
+module.exports.announceAddedToRoom = announceAddedToRoom;
 module.exports.initWebSocket = initWebSocket;
