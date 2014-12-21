@@ -20,7 +20,8 @@ var AuthResultCode = {
     MissingUserId: {code : -18, Message: "MissingUserId"},
     FriendUsernameDoesnotExist: {code : -19, Message :"FriendUsernameDoesnotExist"},
     MissingRoomName: {code: -20, Message: "MissingRoomName"},
-    MissingRoomId: {code : -21, Message: "MissingRoomId"}
+    MissingRoomId: {code : -21, Message: "MissingRoomId"},
+    MissingEventId: {code : -22, Message: "MissingEventId"}
 };
 
 module.exports.AuthResultCode = AuthResultCode;

@@ -10,7 +10,8 @@ var WebsocketMessageList = {
     GetGroupContacts: {code: "8", Message: "GetGroupContacts"},
     CreateGroupRoom: {code: "9", Message: "CreateGroupRoom"},
     AddMemberToGroup: {code: "10", Message: "AddMemberToGroup"},
-    GetGroupMembers: {code : "11", Message: "GetGroupMembers"}
+    GetGroupMembers: {code : "11", Message: "GetGroupMembers"},
+    AckOfTextMessage: {code : "12", Message: "AckOfTextMessage"}
 };
 
 module.exports.WebsocketMessageList = WebsocketMessageList;

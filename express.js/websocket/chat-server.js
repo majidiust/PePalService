@@ -274,6 +274,14 @@ var initWebSocket = function () {
                                     connection.send(createResultTextData(ErrorCodes.MissingUserId.code, ErrorCodes.MissingUserId.Message));
                                 }
                             }
+                            else if (object.requestCode == MessageType.AckOfTextMessage.code){
+                                if(!object.eventId){
+                                    connection.send(createResultTextData(ErrorCodes.MissingEventId.code, ErrorCodes.MissingEventId.Message));
+                                }
+                                else{
+                                    getEventAck(clients[connection.id].user, object.eventId);
+                                }
+                            }
                             else {
                                 connection.send(createResultTextData(ErrorCodes.InvalidRequestCode.code, ErrorCodes.InvalidRequestCode.Message));
                             }
@@ -314,6 +322,28 @@ function createParametrizedResultTextData(message, code, paramName, paramValue) 
     };
     result[paramName] = paramValue;
     return JSON.stringify(result);
+}
+
+function getEventAck(user, eventId){
+    try
+    {
+        UserModel.findOne({ '_id': user.id }).populate('nonDeliveredEvents').exec(function (err, newUser) {
+            if (!err && newUser) {
+                user = newUser;
+                for (var i = 0; i < user.nonDeliveredEvents.length; i++) {
+                    console.log(user.nonDeliveredEvents[i].id + " : " + eventId);
+                    if(user.nonDeliveredEvents[i].id == eventId){
+                        console.log("################### Get Delivered : " + eventId);
+                        user.nonDeliveredEvents.splice(i, 1);
+                        user.save();
+                    }
+                }
+            }
+        });
+    }
+    catch(ex){
+        console.log(ex);
+    }
 }
 
 function createParametrizedResultTextData2(message, code, paramName, paramValue, paramName2, paramValue2) {
@@ -582,31 +612,9 @@ function sendEventsToUser(user, connection) {
                 for (var i = 0; i < user.nonDeliveredEvents.length; i++) {
 
                     var event = user.nonDeliveredEvents[i];
-                    var changed = false;
                     if (event.PublishType == 'Now') {
                         var msg = createEventMessage(event);
                         connection.send(msg);
-                        changed = true;
-                    }
-                    if (changed) {
-                        event.Delivered.push(user.id);
-                        event.save(function (err) {
-                            if (err) {
-                                console.log('Error in save delivered in events document');
-                            }
-                            else {
-                                console.log('delivered user saved to event document');
-                            }
-                        });
-                        user.nonDeliveredEvents.splice(i, 1);
-                        user.save(function (err) {
-                            if (err) {
-                                console.log('Error in save remove event from event list in user document');
-                            }
-                            else {
-                                console.log('save remove event from event list in user document');
-                            }
-                        });
                         break;
                     }
                 }
