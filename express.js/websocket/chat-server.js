@@ -630,11 +630,14 @@ function createEventMessage(event) {
     if (event.Type == 'Text') {
         return createTextEventMessage(event);
     }
+    else if(event.Type == 'Picture'){
+        return createTextEventMessage(event);
+    }
 }
 
 function createTextEventMessage(event) {
     var val = {
-        type: 'Text',
+        type: event.Type,
         date: event.CreateDate,
         from: event.CreatorUserName,
         content: event.Content,

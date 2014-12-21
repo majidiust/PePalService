@@ -12,8 +12,40 @@ var ErrorCodes = require('../libs/error-codes').AuthResultCode;
 var SuccessCodes = require('../libs/success-codes').SuccessCode;
 var CommandList = require('../libs/cmd-list').WebsocketCommandList;
 var rtCore = require("../websocket/chat-server");
+var fs = require('fs');
+var path = require('path');
 
 var router = express.Router();
+
+
+/*----------------------------------- Uploader module ------------------------*/
+var options;
+options = {
+    tmpDir: __dirname + '/../public/uploaded/tmp/entities',
+    uploadDir: __dirname + '/../public/uploaded/entities',
+    uploadUrl: '/uploaded/entities/',
+    maxPostSize: 11000000000, // 11 GB
+    minFileSize: 1,
+    maxFileSize: 10000000000, // 10 GB
+    acceptFileTypes: /\.(gif|jpe?g|png)/i,
+    // Files not matched by this regular expression force a download dialog,
+    // to prevent executing any scripts in the context of the service domain:
+    inlineFileTypes: /\.(gif|jpe?g|png)/i,
+    imageTypes: /\.(gif|jpe?g|png)/i,
+    imageVersions: {
+        width: 80,
+        height: 80
+    },
+    accessControl: {
+        allowOrigin: '*',
+        allowMethods: 'OPTIONS, HEAD, GET, POST, PUT, DELETE',
+        allowHeaders: 'Content-Type, Content-Range, Content-Disposition'
+    }
+};
+
+// init the uploader
+var uploader = require('blueimp-file-upload-expressjs')(options);
+
 //------------------------------------Helpers
 function createParametrizedResultTextData(message, code, paramName, paramValue) {
     var result = {
@@ -192,12 +224,118 @@ function sendTextMessageTo(req, res) {
             }
         });
 }
+
+function sendPictureMessageTo(req, res) {
+    if (!req.params.roomId) {
+        res.json(createResultTextData(ErrorCodes.RoomIdIsEmpty.code, ErrorCodes.RoomIdIsEmpty.Message));
+        return;
+    }
+    var publishType = 'Now';
+    var roomId = req.params.roomId;
+
+    if (req.params.publishType) {
+        if (req.params.publishType == 'Now' || req.params.publishType == 'Scheduled') {
+            publishType = req.params.publishType;
+        }
+        else {
+            res.json(createResultTextData(ErrorCodes.InvalidEventPublishType.code, ErrorCodes.InvalidEventPublishType.Message));
+            return;
+        }
+    }
+    if (publishType == 'Scheduled') {
+        if (!req.params.publishDate) {
+            res.json(createResultTextData(ErrorCodes.InvalidEventPublishDate.code, ErrorCodes.InvalidEventPublishDate.Message));
+            return;
+        }
+    }
+
+    uploader.post(req, res, function (obj) {
+        try {
+            console.log(obj);
+            if(obj.files.length > 0) {
+                var fileName = obj.files[0].name;
+                var extension = getExtension(fileName);
+
+
+    console.log("###################################");
+    RoomModel.findOne({'_id': roomId})
+        .populate('Members')
+        .exec(function (err, room) {
+            if (err) {
+                console.log('error in publish event to room members : ' + err);
+                res.json(createResultTextData(ErrorCodes.PushEventToRoomError.Message, ErrorCodes.PushEventToRoomError.code));
+            }
+            else if (!room) {
+                console.log('specific room not found');
+                res.json(createResultTextData(ErrorCodes.RoomDoesNotExist.Message, ErrorCodes.RoomDoesNotExist.code));
+            }
+            else {
+                /*
+                 *    1.save event in event document
+                 *    2.save event ref to room event collection
+                 *    3.push event ref to room members queue
+                 */
+                var event = new EntityModel({
+                    Type: 'Picture',
+                    Content: "...",
+                    Creator: req.user.id,
+                    CreatorUserName: req.user.username,
+                    PublishType: publishType,
+                    RoomId: roomId
+                });
+                console.log(event);
+                event.save(function (err) {
+                    if (err) {
+                        console.log('error in inserting event in document ' + err);
+                        res.json(createResultTextData(ErrorCodes.PushEventToRoomError.Message, ErrorCodes.PushEventToRoomError.code));
+                    }
+                    else {
+                        console.log("Event save successfully");
+                        room.Entities.push(event.id);
+                        for (var i = 0; i < room.Members.length; i++) {
+                            var user = room.Members[i];
+                            user.nonDeliveredEvents.push(event.id);
+                            user.save(function (err) {
+                                if (err) {
+                                    console.log('error in inserting event to user event queue');
+                                    res.json(createResultTextData(ErrorCodes.PushEventToUSerError.Message, ErrorCodes.PushEventToUSerError.code));
+                                } else {
+                                    console.log('event published successfully');
+                                    try {
+                                        event.Content =  event.id + extension;
+                                        event.save();
+                                        fs.renameSync(options.uploadDir + '/' + fileName, options.uploadDir + '/' + event.id + extension);
+                                    }
+                                    catch(ex){
+                                        console.log("!!!!!!!!!!!!!!! " + ex);
+                                    }
+                                    res.json(createResultTextData(SuccessCodes.EventPostedSuccessfully.Message, SuccessCodes.EventPostedSuccessfully.code));
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+        });
+            }
+        } catch (err) {
+            console.log("@@@ : " + err);
+        }
+    });
+}
+
+function getExtension(filename) {
+    var i = filename.lastIndexOf('.');
+    return (i < 0) ? '' : filename.substr(i);
+}
+
+
 function getIncomingMessage(req, res) {
     UserModel.findOne({'_id': req.user}).populate('nonDeliveredEvents').exec(function (err, user) {
         if (user.nonDeliveredEvents.length > 0) {
             var event = user.nonDeliveredEvents[0];
             var val = {
-                type: 'Text',
+                type: event.Type,
                 date: event.CreateDate,
                 from: event.CreatorUserName,
                 content: event.Content,
@@ -222,4 +360,6 @@ function getIncomingMessage(req, res) {
 router.route('/createIndividualRoom').post(userControl.requireAuthentication, createIndividualRoom);
 router.route('/sendTextMessageTo').post(userControl.requireAuthentication, sendTextMessageTo);
 router.route('/getIncomingMessage').get(userControl.requireAuthentication, getIncomingMessage);
+router.route('/sendPictureMessageTo/:roomId/:publishType/:publishDate').post(userControl.requireAuthentication, sendPictureMessageTo);
+
 module.exports = router;

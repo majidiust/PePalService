@@ -357,12 +357,18 @@ function getExtension(filename) {
 function uploadProfilePic(req, res){
     var tmpUser = req.user;
     uploader.post(req, res, function (obj) {
-        var fileName = obj.files[0].name;
-        var extension = getExtension(fileName);
-        try{
-            fs.renameSync(options.uploadDir + '/' + fileName, options.uploadDir + '/' +tmpUser.id + extension);
-        } catch(err) {
-           res.send(err, 400);
+        if(obj.files) {
+            var fileName = obj.files[0].name;
+            var extension = getExtension(fileName);
+            console.log("@@@@ " + fileName);
+            try {
+                fs.renameSync(options.uploadDir + '/' + fileName, options.uploadDir + '/' + tmpUser.id + extension);
+            } catch (err) {
+                res.send(err, 400);
+            }
+        }
+        else{
+            console.log("no more files");
         }
     });
     res.send('File pic uploaded', 200);
@@ -533,7 +539,6 @@ router.route('/getGroupContacts').get(requireAuthentication, getGroupContacts);
 router.route('/getUsernameViaUserId/:userId').get(requireAuthentication, getUsernameViaUserId);
 router.route('/addFriendToTheList/:username').get(requireAuthentication, addFriendToTheList);
 router.route('/getFriendList').get(requireAuthentication, getFriendList);
-
 //Upload Profile Pic and Save Profile
 router.route('/uploadProfilePic').post(requireAuthentication, uploadProfilePic);
 router.route('/changeProfilePic').post(requireAuthentication, changeProfilePic);
