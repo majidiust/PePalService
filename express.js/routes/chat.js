@@ -337,6 +337,7 @@ function getIncomingMessage(req, res) {
             var val = {
                 type: event.Type,
                 date: event.CreateDate,
+                fromId: event.Creator,
                 from: event.CreatorUserName,
                 content: event.Content,
                 roomId : event.RoomId,
