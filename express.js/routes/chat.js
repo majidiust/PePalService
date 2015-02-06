@@ -194,6 +194,7 @@ function sendTextMessageTo(req, res) {
                     Content: req.body.messageContent,
                     Creator: req.user.id,
                     CreatorUserName: req.user.username,
+                    CreateDate: (new Date()).AsDateJs(),
                     PublishType: publishType,
                     RoomId: roomId
                 });
@@ -279,6 +280,7 @@ function sendPictureMessageTo(req, res) {
                     Type: 'Picture',
                     Content: "...",
                     Creator: req.user.id,
+                    CreateDate: (new Date()).AsDateJs(),
                     CreatorUserName: req.user.username,
                     PublishType: publishType,
                     RoomId: roomId

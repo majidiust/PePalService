@@ -4,7 +4,7 @@ var datejs = require('safe_datejs');
 
 var EntitySchema = new mongoose.Schema({
     Type : {type: String, required: true, enum: ['Text', 'Picture', 'Audio', 'Video', 'SMS', 'Smily']}, // IM/audio/video/smily
-    CreateDate : {type: Date, default: (new Date()).AsDateJs()},
+    CreateDate : {type: Date},
     Content: {type:String, required:true},
     Creator :{type: mongoose.Schema.ObjectId, ref:'User'},
     CreatorUserName: {type: String},

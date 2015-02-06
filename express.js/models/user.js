@@ -63,7 +63,8 @@ var User = new Schema({
         {type: mongoose.Schema.ObjectId, ref: 'Entity'}
     ],
     friends: [Friend],
-    notifications: [Notification]
+    notifications: [Notification],
+    state : {type: String, enum: ['Idle', 'Online', 'Offline', 'Busy']}
 });
 
 
@@ -111,7 +112,23 @@ User.methods.getBrief = function () {
         mobileNumber: this.mobileNumber,
         gender: this.gender,
         individuals : this.individuals,
-        groups : this.groups
+        groups : this.groups,
+        state: this.state
+    };
+    return result;
+}
+
+User.methods.getSummery = function () {
+    var result = {
+        id: this.id,
+        username: this.username,
+        email: this.email,
+        firstName: this.firstname,
+        lastName: this.lastname,
+        registerDate: this.registerdate,
+        mobileNumber: this.mobileNumber,
+        gender: this.gender,
+        state: this.state
     };
     return result;
 }

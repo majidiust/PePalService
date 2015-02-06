@@ -3,6 +3,7 @@ var router = express.Router();
 var userModel = require("../models/user").UserModel;
 var tokenModel = require("../models/token").TokenModel;
 var authController = require('../controllers/auth');
+var rtcConnection = require('../websocket/chat-server');
 var jwt = require('jwt-simple');
 var moment = require('moment');
 var datejs = require('safe_datejs');
@@ -479,6 +480,18 @@ function changeProfilePic(req, res){
     res.send('We do not have a picture of you', 300);
 }
 
+function changeTheStatus(req, res){
+    try{
+        req.user.status = req.params.status;
+        req.user.save(null);
+        rtcConnection.announceUserStateChanged(req.user);
+        res.json(req.user.getSummery());
+    }
+    catch(ex){
+        console.log(ex);
+        res.send(ex, 500);
+    }
+}
 
 function addFriendToTheList(req, res) {
     try {
@@ -526,6 +539,38 @@ function getFriendList(req, res){
     }
 }
 
+function announceTyping(req, res) {
+    try {
+        rtcConnection.announceUserTyping(req.user, req.params.roomId);
+        res.json(req.user.getSummery());
+    }
+    catch (ex) {
+        console.log(ex);
+        res.send(ex, 500);
+    }
+}
+
+function getUserSummery(req, res){
+    try{
+        var founded = false;
+        for(var i = 0 ; i < req.user.friends.length; i++){
+            if(req.params.friendId == req.user.friends[i].friendId){
+                founded = true;
+                userModel.findOne({'_id': req.params.friendId}).exec(function(err, friend){
+                    res.json(friend.getSummery());
+                });
+                break;
+            }
+        }
+        if(!founded)
+            res.send("Not found", 403);
+    }
+    catch(ex){
+        console.log(ex);
+        res.send(ex, 500);
+    }
+}
+
 // ----------------------------------------------- Routes
 router.route('/signout').post(requireAuthentication, signout);
 router.route('/signin').post(signin);
@@ -539,6 +584,9 @@ router.route('/getGroupContacts').get(requireAuthentication, getGroupContacts);
 router.route('/getUsernameViaUserId/:userId').get(requireAuthentication, getUsernameViaUserId);
 router.route('/addFriendToTheList/:username').get(requireAuthentication, addFriendToTheList);
 router.route('/getFriendList').get(requireAuthentication, getFriendList);
+router.route('/changeTheStatus/:status').get(requireAuthentication, changeTheStatus);
+router.route('/getFriendSummery/:friendId').get(requireAuthentication, getUserSummery);
+router.route('/announceTyping/:roomId').get(requireAuthentication, announceTyping);
 //Upload Profile Pic and Save Profile
 router.route('/uploadProfilePic').post(requireAuthentication, uploadProfilePic);
 router.route('/changeProfilePic').post(requireAuthentication, changeProfilePic);
